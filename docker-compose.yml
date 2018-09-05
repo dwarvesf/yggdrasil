@@ -1,0 +1,51 @@
+version: "3.5"
+services:
+  consul:
+    image: progrium/consul
+    restart: always
+    container_name: consul
+    command: -server -bootstrap -ui-dir /ui
+    ports:
+      - "8400:8400"
+      - "8500:8500"
+      - "8600:53/udp"
+    networks:
+      service-mesh:
+        ipv4_address: 10.5.0.2
+
+  service_mesh_db:
+    image: postgres:9.6
+    restart: always
+    container_name: postgres
+    environment:
+      POSTGRES_DB: yggdrasil
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+    networks:
+      service-mesh:
+        ipv4_address: 10.5.0.3
+
+  registrator:
+    image: gliderlabs/registrator:latest
+    restart: always
+    container_name: registrator
+    command: -ip 10.5.0.5 -cleanup=true  consul://10.5.0.2:8500
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock"
+    depends_on:
+    - consul
+    networks:
+      service-mesh:
+        ipv4_address: 10.5.0.4
+
+networks:
+  service-mesh:
+    name: service-mesh-nw
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.5.0.0/16
