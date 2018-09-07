@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
+	"github.com/segmentio/kafka-go"
 )
 
 func main() {
@@ -50,6 +52,25 @@ func main() {
 			panic(err)
 		}
 		logger.Log("consul", "registered", "name", name)
+	}()
+
+	go func() {
+		r := kafka.NewReader(kafka.ReaderConfig{
+			// ! move address to env
+			Brokers: []string{"10.5.0.5:9092"},
+			Topic:   "email",
+		})
+
+		for {
+			m, err := r.ReadMessage(context.Background())
+			if err != nil {
+				break
+			}
+			// TODO: handle message logic here
+			fmt.Println("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
+		}
+
+		r.Close()
 	}()
 
 	logger.Log("exit", <-errs)
