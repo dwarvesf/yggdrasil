@@ -15,6 +15,7 @@ import (
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 	"github.com/segmentio/kafka-go"
+	validator "gopkg.in/validator.v2"
 )
 
 func main() {
@@ -89,6 +90,10 @@ func main() {
 			var req model.Request
 			if err = json.Unmarshal(m.Value, &req); err != nil {
 				logger.Log("error", err.Error())
+				continue
+			}
+			if err := validator.Validate; err != nil {
+				logger.Log("error", err)
 				continue
 			}
 

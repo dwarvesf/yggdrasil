@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:320e7ead93de9fd2b0e59b50fd92a4d50c1f8ab455d96bc2eb083267453a9709"
+  name = "github.com/asaskevich/govalidator"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "ccb8e960c48f04d6935e72476ae4a51028f9e22f"
+  version = "v9"
+
+[[projects]]
   digest = "1:b9914f85d95a0968bafd1be1908ba29e2eafafd88d6fd13696be42bf5368c380"
   name = "github.com/go-chi/chi"
   packages = ["."]
@@ -144,10 +152,19 @@
   revision = "8caf17aa96b4a98bae8bd216878dd50ff12897b5"
   version = "v3.4.1"
 
+[[projects]]
+  branch = "v2"
+  digest = "1:b6539350da50de0d3c9b83ae587c06b89be9cb5750443bdd887f1c4077f57776"
+  name = "gopkg.in/validator.v2"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "135c24b11c19e52befcae2ec3fca5d9b78c4e98e"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/asaskevich/govalidator",
     "github.com/go-chi/chi",
     "github.com/go-chi/cors",
     "github.com/go-kit/kit/endpoint",
@@ -157,6 +174,8 @@
     "github.com/jinzhu/gorm",
     "github.com/segmentio/kafka-go",
     "github.com/sendgrid/sendgrid-go",
+    "github.com/sendgrid/sendgrid-go/helpers/mail",
+    "gopkg.in/validator.v2",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
