@@ -75,39 +75,35 @@ func main() {
 			Topic:   "email",
 		})
 		for {
-			func() {
-				m, err := r.ReadMessage(context.Background())
-				defer r.Close()
+			m, err := r.ReadMessage(context.Background())
+			if err != nil {
+				logger.Log("error", err.Error())
+				// TODO: should break or continue if cannot read msg from queue
+				break
+			}
+			// fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
+			if string(m.Value) == "" {
+				continue
+			}
+
+			var req model.Request
+			if err = json.Unmarshal(m.Value, &req); err != nil {
+				logger.Log("error", err.Error())
+				continue
+			}
+
+			var emailer email.Emailer
+			switch req.Type {
+			case "sendgrid":
+				pair, _, err := kv.Get("sendgrid", nil)
 				if err != nil {
 					logger.Log("error", err.Error())
-					// TODO: should break or continue if cannot read msg from queue
-					return
+					continue
 				}
-				// fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
-				if string(m.Value) == "" {
-					return
-				}
-
-				var req model.Request
-				if err = json.Unmarshal(m.Value, &req); err != nil {
-					logger.Log("error", err.Error())
-					return
-				}
-
-				var emailer email.Emailer
-				switch req.Type {
-				case "sendgrid":
-					pair, _, err := kv.Get("sendgrid", nil)
-					if err != nil {
-						logger.Log("error", err.Error())
-						return
-					}
-					emailer = sendgrid.New(string(pair.Value))
-					emailer.Send()
-				}
-			}()
+				emailer = sendgrid.New(string(pair.Value))
+				emailer.Send()
+			}
 		}
-
 		r.Close()
 	}()
 
