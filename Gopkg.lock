@@ -2,180 +2,123 @@
 
 
 [[projects]]
-  digest = "1:320e7ead93de9fd2b0e59b50fd92a4d50c1f8ab455d96bc2eb083267453a9709"
-  name = "github.com/asaskevich/govalidator"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "ccb8e960c48f04d6935e72476ae4a51028f9e22f"
-  version = "v9"
-
-[[projects]]
-  digest = "1:b9914f85d95a0968bafd1be1908ba29e2eafafd88d6fd13696be42bf5368c380"
   name = "github.com/go-chi/chi"
   packages = ["."]
-  pruneopts = "UT"
   revision = "b5294d10673813fac8558e7f47242bc9e61b4c25"
   version = "v3.3.3"
 
 [[projects]]
-  digest = "1:dfa416a1bb8139f30832543340f972f65c0db9932034cb6a1b42c5ac615a3fb8"
   name = "github.com/go-chi/cors"
   packages = ["."]
-  pruneopts = "UT"
   revision = "dba6525398619dead495962a916728e7ee2ca322"
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:44c19b0501d2ae50d64ed0e4ac587c27084bd9f6d591c8fd4695f1f1339e5538"
   name = "github.com/go-kit/kit"
   packages = [
     "endpoint",
     "log",
-    "transport/http",
+    "transport/http"
   ]
-  pruneopts = "UT"
   revision = "ca4112baa34cb55091301bdc13b1420a122b1b9e"
   version = "v0.7.0"
 
 [[projects]]
-  digest = "1:31a18dae27a29aa074515e43a443abfd2ba6deb6d69309d8d7ce789c45f34659"
   name = "github.com/go-logfmt/logfmt"
   packages = ["."]
-  pruneopts = "UT"
   revision = "390ab7935ee28ec6b286364bba9b4dd6410cb3d5"
   version = "v0.3.0"
 
 [[projects]]
-  digest = "1:586ea76dbd0374d6fb649a91d70d652b7fe0ccffb8910a77468e7702e7901f3d"
   name = "github.com/go-stack/stack"
   packages = ["."]
-  pruneopts = "UT"
   revision = "2fee6af1a9795aafbe0253a0cfbdf668e1fb8a9a"
   version = "v1.8.0"
 
 [[projects]]
-  digest = "1:f8cb7c367c825e0c0be75f17e9b003d39b1240a1535fbbf095a18d7bb0d0c9c9"
   name = "github.com/hashicorp/consul"
   packages = ["api"]
-  pruneopts = "UT"
   revision = "e716d1b5f8be252b3e53906c6d5632e0228f30fa"
   version = "v1.2.2"
 
 [[projects]]
-  digest = "1:f47d6109c2034cb16bd62b220e18afd5aa9d5a1630fe5d937ad96a4fb7cbb277"
   name = "github.com/hashicorp/go-cleanhttp"
   packages = ["."]
-  pruneopts = "UT"
   revision = "e8ab9daed8d1ddd2d3c4efba338fe2eeae2e4f18"
   version = "v0.5.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:45aad874d3c7d5e8610427c81870fb54970b981692930ec2a319ce4cb89d7a00"
   name = "github.com/hashicorp/go-rootcerts"
   packages = ["."]
-  pruneopts = "UT"
   revision = "6bb64b370b90e7ef1fa532be9e591a81c3493e00"
 
 [[projects]]
-  digest = "1:0dd7b7b01769f9df356dc99f9e4144bdbabf6c79041ea7c0892379c5737f3c44"
   name = "github.com/hashicorp/serf"
   packages = ["coordinate"]
-  pruneopts = "UT"
   revision = "d6574a5bb1226678d7010325fb6c985db20ee458"
   version = "v0.8.1"
 
 [[projects]]
-  digest = "1:235ae01f32fb5f12c5f6d2e0e05ab48e651ab31c126e45a4efc4f510810941ac"
   name = "github.com/jinzhu/gorm"
   packages = ["."]
-  pruneopts = "UT"
   revision = "6ed508ec6a4ecb3531899a69cbc746ccf65a4166"
   version = "v1.9.1"
 
 [[projects]]
   branch = "master"
-  digest = "1:fd97437fbb6b7dce04132cf06775bd258cce305c44add58eb55ca86c6c325160"
   name = "github.com/jinzhu/inflection"
   packages = ["."]
-  pruneopts = "UT"
   revision = "04140366298a54a039076d798123ffa108fff46c"
 
 [[projects]]
   branch = "master"
-  digest = "1:a64e323dc06b73892e5bb5d040ced475c4645d456038333883f58934abbf6f72"
   name = "github.com/kr/logfmt"
   packages = ["."]
-  pruneopts = "UT"
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
 
 [[projects]]
-  digest = "1:78bbb1ba5b7c3f2ed0ea1eab57bdd3859aec7e177811563edc41198a760b06af"
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
-  pruneopts = "UT"
   revision = "ae18d6b8b3205b561c79e8e5f69bff09736185f4"
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:645110e089152bd0f4a011a2648fbb0e4df5977be73ca605781157ac297f50c4"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  pruneopts = "UT"
   revision = "fa473d140ef3c6adf42d6b391fe76707f1f243c8"
   version = "v1.0.0"
 
 [[projects]]
   branch = "master"
-  digest = "1:7f081bc4c81e3e69f4d3b4a87e1b23f2a395e9804f06895c52f8f4157af7a35a"
   name = "github.com/segmentio/kafka-go"
   packages = ["."]
-  pruneopts = "UT"
   revision = "48c37f796910d8154479aaa04ade5843ae4f55d0"
 
 [[projects]]
-  digest = "1:043a68c728982a54355d57e347dd4b52ba5ab3fec50e7a57894b1baa80aa7a9e"
   name = "github.com/sendgrid/rest"
   packages = ["."]
-  pruneopts = "UT"
   revision = "306b9bef57dc36f3435ccfcc08fe6ae2c6920344"
   version = "v2.4.1"
 
 [[projects]]
-  digest = "1:bf326e9bc2c70dfc765590bfa9c9985e41355f7972fb50e7f052440f3a5122a2"
   name = "github.com/sendgrid/sendgrid-go"
   packages = [
     ".",
-    "helpers/mail",
+    "helpers/mail"
   ]
-  pruneopts = "UT"
   revision = "8caf17aa96b4a98bae8bd216878dd50ff12897b5"
   version = "v3.4.1"
 
 [[projects]]
   branch = "v2"
-  digest = "1:b6539350da50de0d3c9b83ae587c06b89be9cb5750443bdd887f1c4077f57776"
   name = "gopkg.in/validator.v2"
   packages = ["."]
-  pruneopts = "UT"
   revision = "135c24b11c19e52befcae2ec3fca5d9b78c4e98e"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  input-imports = [
-    "github.com/asaskevich/govalidator",
-    "github.com/go-chi/chi",
-    "github.com/go-chi/cors",
-    "github.com/go-kit/kit/endpoint",
-    "github.com/go-kit/kit/log",
-    "github.com/go-kit/kit/transport/http",
-    "github.com/hashicorp/consul/api",
-    "github.com/jinzhu/gorm",
-    "github.com/segmentio/kafka-go",
-    "github.com/sendgrid/sendgrid-go",
-    "github.com/sendgrid/sendgrid-go/helpers/mail",
-    "gopkg.in/validator.v2",
-  ]
+  inputs-digest = "210d54b4e147ffebfffe56059c6ed55a077a4edc658db09961ab719da621ee4f"
   solver-name = "gps-cdcl"
   solver-version = 1

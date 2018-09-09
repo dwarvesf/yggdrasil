@@ -9,13 +9,15 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/dwarvesf/yggdrasil/email/model"
-	email "github.com/dwarvesf/yggdrasil/email/service"
-	"github.com/dwarvesf/yggdrasil/email/service/sendgrid"
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 	"github.com/segmentio/kafka-go"
 	validator "gopkg.in/validator.v2"
+
+	"github.com/dwarvesf/yggdrasil/email/model"
+	email "github.com/dwarvesf/yggdrasil/email/service"
+	"github.com/dwarvesf/yggdrasil/email/service/sendgrid"
+	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
 func main() {
@@ -40,41 +42,32 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	kv := consulClient.KV()
 
 	go func() {
+		name := "email"
 		port, err := strconv.Atoi(os.Getenv("PORT"))
 		if err != nil {
 			panic(err)
 		}
+		logger.Log("consul", "registering", "name", name)
 
-		if err != nil {
+		if err := toolkit.RegisterService(consulClient, name, port); err != nil {
 			panic(err)
 		}
-		agent := consulClient.Agent()
-
-		name := "email"
-		if err := agent.ServiceRegister(&consul.AgentServiceRegistration{
-			Name:    name,
-			Port:    port,
-			Address: os.Getenv("PRIVATE_IP"),
-		}); err != nil {
-			panic(err)
-		}
-		logger.Log("consul", "registered", "name", name)
 	}()
 
 	go func() {
-		var queueAddr []*consul.CatalogService
-		queueAddr, _, err := consulClient.Catalog().Service("kafka", "", nil)
+		kafkaAddr, kafkaPort, err := toolkit.GetServiceAddress(consulClient, "kafka")
 		if err != nil {
 			panic(err)
 		}
 
 		r := kafka.NewReader(kafka.ReaderConfig{
-			Brokers: []string{fmt.Sprintf("%v:%v", queueAddr[0].ServiceAddress, queueAddr[0].ServicePort)},
+			Brokers: []string{fmt.Sprintf("%v:%v", kafkaAddr, kafkaPort)},
 			Topic:   "email",
 		})
+
+		defer r.Close()
 		for {
 			m, err := r.ReadMessage(context.Background())
 			if err != nil {
@@ -100,16 +93,11 @@ func main() {
 			var emailer email.Emailer
 			switch req.Type {
 			case "sendgrid":
-				pair, _, err := kv.Get("sendgrid", nil)
-				if err != nil {
-					logger.Log("error", err.Error())
-					continue
-				}
-				emailer = sendgrid.New(string(pair.Value))
+				v, _ := toolkit.GetConsulValueFromKey(consulClient, "sendgrid")
+				emailer = sendgrid.New(v)
 				emailer.Send()
 			}
 		}
-		r.Close()
 	}()
 
 	logger.Log("exit", <-errs)
