@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/dwarvesf/yggdrasil/email/model"
 	email "github.com/dwarvesf/yggdrasil/email/service"
 	"github.com/dwarvesf/yggdrasil/email/service/sendgrid"
 	"github.com/go-kit/kit/log"
@@ -63,49 +64,48 @@ func main() {
 	}()
 
 	go func() {
-		var kafkaAddr []*consul.CatalogService
-		kafkaAddr, _, err := consulClient.Catalog().Service("kafka", "", nil)
+		var queueAddr []*consul.CatalogService
+		queueAddr, _, err := consulClient.Catalog().Service("kafka", "", nil)
 		if err != nil {
 			panic(err)
 		}
-		type Message struct {
-			Type       string            `json:"type"`
-			TemplateID string            `json:"template_id"`
-			Data       map[string]string `json:"data"`
-			Content    string            `json:"content"`
-		}
 
 		r := kafka.NewReader(kafka.ReaderConfig{
-			Brokers: []string{fmt.Sprintf("%v:%v", kafkaAddr[0].ServiceAddress, kafkaAddr[0].ServicePort)},
+			Brokers: []string{fmt.Sprintf("%v:%v", queueAddr[0].ServiceAddress, queueAddr[0].ServicePort)},
 			Topic:   "email",
 		})
 		for {
-			m, err := r.ReadMessage(context.Background())
-			if err != nil {
-				logger.Log("error", err.Error())
-				// TODO: should break or continue if cannot read msg from kafka
-				break
-			}
-			// fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
-			if string(m.Value) == "" {
-				continue
-			}
-			var msg Message
-			if err = json.Unmarshal(m.Value, &msg); err != nil {
-				logger.Log("error", err.Error())
-				continue
-			}
-			var emailer email.Emailer
-			switch msg.Type {
-			case "sendgrid":
-				pair, _, err := kv.Get("sendgrid", nil)
+			func() {
+				m, err := r.ReadMessage(context.Background())
+				defer r.Close()
 				if err != nil {
 					logger.Log("error", err.Error())
-					continue
+					// TODO: should break or continue if cannot read msg from queue
+					return
 				}
-				emailer = sendgrid.New(string(pair.Value))
-				emailer.Send()
-			}
+				// fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
+				if string(m.Value) == "" {
+					return
+				}
+
+				var req model.Request
+				if err = json.Unmarshal(m.Value, &req); err != nil {
+					logger.Log("error", err.Error())
+					return
+				}
+
+				var emailer email.Emailer
+				switch req.Type {
+				case "sendgrid":
+					pair, _, err := kv.Get("sendgrid", nil)
+					if err != nil {
+						logger.Log("error", err.Error())
+						return
+					}
+					emailer = sendgrid.New(string(pair.Value))
+					emailer.Send()
+				}
+			}()
 		}
 
 		r.Close()
