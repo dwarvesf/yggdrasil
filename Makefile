@@ -1,12 +1,13 @@
 SRCPATH=$(GOPATH)/src/github.com/dwarvesf/yggdrasil
-.PHONY: infras up-identity up-email up
+.PHONY: init up-identity up-email up
 
 ## SETUP INFRAS
 remove-infras:
 	docker-compose stop; docker-compose rm -f
 
-infras: remove-infras
+init: remove-infras
 	docker-compose up -d
+	./setup.sh
 
 up-email:
 	cd $(SRCPATH)/email && make build-alpine && \

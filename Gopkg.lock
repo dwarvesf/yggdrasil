@@ -117,6 +117,33 @@
   revision = "fa473d140ef3c6adf42d6b391fe76707f1f243c8"
   version = "v1.0.0"
 
+[[projects]]
+  branch = "master"
+  digest = "1:7f081bc4c81e3e69f4d3b4a87e1b23f2a395e9804f06895c52f8f4157af7a35a"
+  name = "github.com/segmentio/kafka-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "48c37f796910d8154479aaa04ade5843ae4f55d0"
+
+[[projects]]
+  digest = "1:043a68c728982a54355d57e347dd4b52ba5ab3fec50e7a57894b1baa80aa7a9e"
+  name = "github.com/sendgrid/rest"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "306b9bef57dc36f3435ccfcc08fe6ae2c6920344"
+  version = "v2.4.1"
+
+[[projects]]
+  digest = "1:bf326e9bc2c70dfc765590bfa9c9985e41355f7972fb50e7f052440f3a5122a2"
+  name = "github.com/sendgrid/sendgrid-go"
+  packages = [
+    ".",
+    "helpers/mail",
+  ]
+  pruneopts = "UT"
+  revision = "8caf17aa96b4a98bae8bd216878dd50ff12897b5"
+  version = "v3.4.1"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
@@ -128,6 +155,8 @@
     "github.com/go-kit/kit/transport/http",
     "github.com/hashicorp/consul/api",
     "github.com/jinzhu/gorm",
+    "github.com/segmentio/kafka-go",
+    "github.com/sendgrid/sendgrid-go",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

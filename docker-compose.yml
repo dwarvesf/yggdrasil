@@ -13,14 +13,29 @@ services:
       service-mesh:
         ipv4_address: 10.5.0.2
 
+  registrator:
+    image: gliderlabs/registrator:latest
+    restart: always
+    container_name: registrator
+    command: -ip 10.5.0.4 -cleanup=true  consul://10.5.0.2:8500
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock"
+    depends_on:
+      - consul
+    networks:
+      service-mesh:
+        ipv4_address: 10.5.0.4
+
   postgres:
     image: postgres:9.6
     restart: always
-    container_name: postgres_yggdrasil
+    container_name: yggdrasil_postgres
     environment:
       POSTGRES_DB: yggdrasil
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: 123
+    depends_on:
+      - registrator
     ports:
       - "5432:5432"
     expose:
@@ -33,6 +48,8 @@ services:
     image: wurstmeister/zookeeper:3.4.6
     ports:
       - "2181:2181"
+    depends_on:
+      - registrator
     networks:
       service-mesh:
         ipv4_address: 10.5.0.7
@@ -54,19 +71,6 @@ services:
     networks:
       service-mesh:
         ipv4_address: 10.5.0.6
-
-  registrator:
-    image: gliderlabs/registrator:latest
-    restart: always
-    container_name: registrator
-    command: -ip 10.5.0.5 -cleanup=true  consul://10.5.0.2:8500
-    volumes:
-      - "/var/run/docker.sock:/tmp/docker.sock"
-    depends_on:
-      - consul
-    networks:
-      service-mesh:
-        ipv4_address: 10.5.0.4
 
 networks:
   service-mesh:
