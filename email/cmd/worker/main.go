@@ -8,13 +8,11 @@ import (
 	"os/signal"
 	"strconv"
 	"syscall"
-	"time"
 
 	email "github.com/dwarvesf/yggdrasil/email/service"
 	"github.com/dwarvesf/yggdrasil/email/service/sendgrid"
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
-	"github.com/k0kubun/pp"
 	"github.com/segmentio/kafka-go"
 )
 
@@ -77,39 +75,18 @@ func main() {
 			Content    string            `json:"content"`
 		}
 
-		// ============= demo send msg to kafka
-		pp.Println("mock data email")
-		b, err := json.Marshal(Message{Type: "sendgrid", TemplateID: "", Data: nil, Content: "abs"})
-		if err != nil {
-			panic(err)
-		}
-		w := kafka.NewWriter(kafka.WriterConfig{
-			Brokers:  []string{fmt.Sprintf("%v:%v", kafkaAddr[0].Address, kafkaAddr[0].ServicePort)},
-			Topic:    "email",
-			Balancer: &kafka.LeastBytes{},
-		})
-		w.WriteMessages(context.Background(),
-			kafka.Message{
-				Key:   []byte("message"),
-				Value: b,
-			},
-		)
-		w.Close()
-		time.Sleep(time.Duration(1) * time.Second)
-		// ============= demo send msg to kafka
-
 		r := kafka.NewReader(kafka.ReaderConfig{
-			Brokers: []string{fmt.Sprintf("%v:%v", kafkaAddr[0].Address, kafkaAddr[0].ServicePort)},
+			Brokers: []string{fmt.Sprintf("%v:%v", kafkaAddr[0].ServiceAddress, kafkaAddr[0].ServicePort)},
 			Topic:   "email",
 		})
 		for {
 			m, err := r.ReadMessage(context.Background())
 			if err != nil {
-				pp.Println(err.Error())
+				logger.Log("error", err.Error())
+				// TODO: should break or continue if cannot read msg from kafka
 				break
 			}
-			// TODO: handle message logic here
-			fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
+			// fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
 			if string(m.Value) == "" {
 				continue
 			}
@@ -121,13 +98,11 @@ func main() {
 			var emailer email.Emailer
 			switch msg.Type {
 			case "sendgrid":
-				// Get a handle to the KV API
 				pair, _, err := kv.Get("sendgrid", nil)
 				if err != nil {
 					logger.Log("error", err.Error())
-					panic(err)
+					continue
 				}
-				pp.Println(string(pair.Value))
 				emailer = sendgrid.New(string(pair.Value))
 				emailer.Send()
 			}

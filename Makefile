@@ -12,11 +12,11 @@ init: remove-infras
 up-email:
 	cd $(SRCPATH)/email && make build-alpine && \
 	docker rm -f email | true && \
-	docker-compose up -d --build --force-recreate 
+	docker-compose up -d --build --force-recreate; rm worker
 
 up-identity:
 	cd $(SRCPATH)/identity && make build-alpine && \
 	docker rm -f identity | true && \
-	docker-compose up -d --build --force-recreate 
+	docker-compose up -d --build --force-recreate; rm server
 
 up: up-email up-identity

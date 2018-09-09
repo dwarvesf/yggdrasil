@@ -1,10 +1,10 @@
 version: "3.5"
 services:
   consul:
-    image: progrium/consul
+    image: gliderlabs/consul-server
     restart: always
     container_name: consul
-    command: -server -bootstrap -ui-dir /ui
+    command: -server -bootstrap -ui
     ports:
       - "8400:8400"
       - "8500:8500"
@@ -17,14 +17,14 @@ services:
     image: gliderlabs/registrator:latest
     restart: always
     container_name: registrator
-    command: -ip 10.5.0.4 -cleanup=true  consul://10.5.0.2:8500
+    command: -cleanup=true  consul://10.5.0.2:8500
     volumes:
       - "/var/run/docker.sock:/tmp/docker.sock"
     depends_on:
       - consul
     networks:
       service-mesh:
-        ipv4_address: 10.5.0.4
+        ipv4_address: 10.5.0.3
 
   postgres:
     image: postgres:9.6
@@ -42,7 +42,7 @@ services:
       - "5432"
     networks:
       service-mesh:
-        ipv4_address: 10.5.0.3
+        ipv4_address: 10.5.0.4
   
   zookeeper:
     image: wurstmeister/zookeeper:3.4.6
@@ -52,13 +52,15 @@ services:
       - registrator
     networks:
       service-mesh:
-        ipv4_address: 10.5.0.7
+        ipv4_address: 10.5.0.5
 
   kafka:
     image: wurstmeister/kafka:2.11-2.0.0
     container_name: kafka
     ports:
       - "9092:9092"
+    expose:
+      - "9092"
     depends_on:
       - zookeeper
     links:
