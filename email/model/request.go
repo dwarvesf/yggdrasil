@@ -13,6 +13,6 @@ type Request struct {
 }
 
 type Person struct {
-	Name  string `json:"name" validate:"nonzero"`
-	Email string `json:"email" validate:"nonzero"`
+	Name  string `validate:"nonzero"`
+	Email string `validate:"nonzero"`
 }

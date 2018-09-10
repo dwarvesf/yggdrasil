@@ -1,0 +1,19 @@
+version: "3.5"
+services:
+  scheduler:
+    image: scheduler
+    container_name: scheduler
+    build:
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/scheduler
+    env_file:
+      - .env
+    external_links:
+      - consul
+      - service_mesh_db
+    networks:
+      service-mesh:
+        ipv4_address: 10.5.0.254
+
+networks:
+  service-mesh:
+    name: service-mesh-nw
