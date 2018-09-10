@@ -1,8 +1,6 @@
 #!/bin/bash
 . .env
 
-sleep 2
-
 PRIVATE_IP="127.0.0.1"
 
 docker exec -t postgres sh -c "psql -U postgres -c 'CREATE DATABASE scheduler'"

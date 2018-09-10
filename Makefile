@@ -1,4 +1,6 @@
 SRCPATH=$(GOPATH)/src/github.com/dwarvesf/yggdrasil
+POSTGRES_CONTAINER=postgres
+
 .PHONY: init up-identity up-email up
 
 ## SETUP INFRAS
@@ -7,6 +9,9 @@ remove-infras:
 
 init: remove-infras
 	docker-compose up -d
+	@while ! docker exec $(POSTGRES_CONTAINER) pg_isready -h localhost -p 5432 > /dev/null; do \
+		sleep 1; \
+	done
 	./setup.sh
 
 up-email:
