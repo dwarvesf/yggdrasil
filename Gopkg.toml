@@ -54,9 +54,9 @@
   version = "3.4.1"
 
 [[constraint]]
-  name = "github.com/asaskevich/govalidator"
-  version = "9.0.0"
-
-[[constraint]]
   branch = "v2"
   name = "gopkg.in/validator.v2"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/segmentio/kafka-go"
