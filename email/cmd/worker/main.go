@@ -91,7 +91,7 @@ func main() {
 			}
 
 			var emailer email.Emailer
-			switch req.Type {
+			switch req.Provider {
 			case "sendgrid":
 				v, _ := toolkit.GetConsulValueFromKey(consulClient, "sendgrid")
 				emailer = sendgrid.New(v)

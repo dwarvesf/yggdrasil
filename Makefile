@@ -14,9 +14,14 @@ up-email:
 	docker rm -f email | true && \
 	docker-compose up -d --build --force-recreate; rm worker
 
+up-sms:
+	cd $(SRCPATH)/sms && make build-alpine && \
+	docker rm -f sms | true && \
+	docker-compose up -d --build --force-recreate; rm worker
+
 up-identity:
 	cd $(SRCPATH)/identity && make build-alpine && \
 	docker rm -f identity | true && \
 	docker-compose up -d --build --force-recreate; rm server
 
-up: up-email up-identity
+up: up-email up-sms up-identity
