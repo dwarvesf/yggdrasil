@@ -13,6 +13,11 @@ curl -X PUT --url $PRIVATE_IP:8500/v1/kv/twilio \
     "sid":"'$TWILIO_SID'",
     "key":"'$TWILIO_KEY'"
 }'
+curl -X PUT --url $PRIVATE_IP:8500/v1/kv/stripe \
+    -d '{
+    "public":"'$STRIPE_API_PUBLIC'",
+    "secret":"'$STRIPE_API_SECRET'"
+}'
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/sql \
     -d '{
     "user": "admin",
