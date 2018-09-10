@@ -80,6 +80,7 @@ func main() {
 				continue
 			}
 
+			// TODO: simplify main function
 			var req model.Request
 			if err = json.Unmarshal(m.Value, &req); err != nil {
 				logger.Log("error", err.Error())
