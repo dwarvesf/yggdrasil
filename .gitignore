@@ -23,7 +23,6 @@ jsconfig.json
 *.out
 
 ### Go Patch ###
-/vendor/
 /Godeps/
 
 ### macOS ###
