@@ -24,6 +24,11 @@ up-sms:
 	docker rm -f sms | true && \
 	docker-compose up -d --build --force-recreate; rm worker
 
+up-payment:
+	cd $(SRCPATH)/payment && make build-alpine && \
+	docker rm -f payment | true && \
+	docker-compose up -d --build --force-recreate; rm worker
+
 up-identity:
 	cd $(SRCPATH)/identity && make build-alpine && \
 	docker rm -f identity | true && \
@@ -34,4 +39,4 @@ up-scheduler:
 	docker rm -f scheduler | true && \
 	docker-compose up -d --build --force-recreate; rm worker
 
-up: up-email up-sms up-scheduler
+up: up-email up-sms up-scheduler up-identity up-payment

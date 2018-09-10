@@ -124,6 +124,17 @@
   version = "v3.4.1"
 
 [[projects]]
+  name = "github.com/stripe/stripe-go"
+  packages = [
+    ".",
+    "charge",
+    "customer",
+    "form"
+  ]
+  revision = "e9c94ea927946d963120999d50dd6384b46b563f"
+  version = "v49.1.0"
+
+[[projects]]
   branch = "v2"
   name = "gopkg.in/validator.v2"
   packages = ["."]
