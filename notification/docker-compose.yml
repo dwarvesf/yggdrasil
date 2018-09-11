@@ -1,0 +1,19 @@
+version: "3.5"
+services:
+  notification:
+    image: notification
+    container_name: notification
+    build:
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/notification
+    env_file:
+      - .env
+    external_links:
+      - consul
+      - service_mesh_db
+    networks:
+      service-mesh:
+        ipv4_address: 10.5.0.123
+
+networks:
+  service-mesh:
+    name: service-mesh-nw

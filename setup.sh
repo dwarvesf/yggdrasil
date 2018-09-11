@@ -6,6 +6,7 @@ PRIVATE_IP="127.0.0.1"
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/sendgrid -d $SENDGRID_API_KEY
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/mandrill -d $MANDRILL_API_KEY
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/fcm -d $FCM_SERVER_KEY
+curl -X PUT --url $PRIVATE_IP:8500/v1/kv/project_id -d $PROJECT_ID
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/twilio \
     -d '{
     "sid":"'$TWILIO_SID'",
