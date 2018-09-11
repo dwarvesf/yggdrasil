@@ -29,4 +29,9 @@ up-identity:
 	docker rm -f identity | true && \
 	docker-compose up -d --build --force-recreate; rm server
 
-up: up-email up-sms up-identity
+up-scheduler:
+	cd $(SRCPATH)/scheduler && make build-alpine && \
+	docker rm -f scheduler | true && \
+	docker-compose up -d --build --force-recreate; rm worker
+
+up: up-email up-sms up-scheduler

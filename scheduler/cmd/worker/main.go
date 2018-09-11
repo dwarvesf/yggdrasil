@@ -14,7 +14,10 @@ import (
 	"github.com/segmentio/kafka-go"
 	validator "gopkg.in/validator.v2"
 
+	"github.com/dwarvesf/yggdrasil/scheduler/db"
 	"github.com/dwarvesf/yggdrasil/scheduler/model"
+	"github.com/dwarvesf/yggdrasil/scheduler/service"
+	"github.com/dwarvesf/yggdrasil/scheduler/service/scheduler"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
@@ -54,6 +57,15 @@ func main() {
 		}
 	}()
 
+	var (
+		pgdb, closeDB = db.New(consulClient)
+
+		s = service.Service{
+			SchedulerService: scheduler.NewPGService(pgdb),
+		}
+	)
+	defer closeDB()
+
 	go func() {
 		kafkaAddr, kafkaPort, err := toolkit.GetServiceAddress(consulClient, "kafka")
 		if err != nil {
@@ -73,10 +85,6 @@ func main() {
 				// TODO: should break or continue if cannot read msg from queue
 				break
 			}
-			// fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
-			if string(m.Value) == "" {
-				continue
-			}
 
 			// TODO: simplify main function
 			var req model.Request
@@ -92,6 +100,7 @@ func main() {
 			// Step 1: Validate a message
 			// Step 2: Save message to db
 			// Step 3: Create a go routine to check db every X mins
+			handleMessage(s)
 		}
 	}()
 
