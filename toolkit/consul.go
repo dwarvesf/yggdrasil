@@ -23,7 +23,7 @@ func GetServiceAddress(c *consul.Client, svc string) (string, int, error) {
 		return "", 0, err
 	}
 
-	return addr[0].Address, addr[0].ServicePort, nil
+	return addr[0].ServiceAddress, addr[0].ServicePort, nil
 }
 
 // RegisterService register a service to consul
