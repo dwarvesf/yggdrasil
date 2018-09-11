@@ -3,8 +3,6 @@
 
 PRIVATE_IP="127.0.0.1"
 
-docker exec -t postgres sh -c "psql -U postgres -c 'CREATE DATABASE scheduler'"
-
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/sendgrid -d $SENDGRID_API_KEY 
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/mandrill -d $MANDRILL_API_KEY 
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/fcm -d $FCM_SERVER_KEY 

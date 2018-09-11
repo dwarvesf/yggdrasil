@@ -30,6 +30,8 @@ services:
     image: postgres:9.6
     restart: always
     container_name: postgres
+    volumes:
+      - "./seed.sql:/docker-entrypoint-initdb.d/seed.sql"
     environment:
       POSTGRES_DB: yggdrasil
       POSTGRES_USER: admin

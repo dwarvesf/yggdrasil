@@ -1,7 +1,7 @@
 SRCPATH=$(GOPATH)/src/github.com/dwarvesf/yggdrasil
 POSTGRES_CONTAINER=postgres
 
-.PHONY: init up-identity up-email up
+.PHONY: init up-identity up-email up-sms up
 
 ## SETUP INFRAS
 remove-infras:
