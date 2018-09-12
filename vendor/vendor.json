@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "PN4esCJOelN6R9X54GUKkXcpBYQ=",
+			"path": "github.com/sfreiberg/gotwilio",
+			"revision": "f446a6ddc88051bf1d4c1f950e8691c7f6d6364d",
+			"revisionTime": "2018-09-11T17:40:14Z"
+		}
+	],
+	"rootPath": "github.com/dwarvesf/yggdrasil"
+}

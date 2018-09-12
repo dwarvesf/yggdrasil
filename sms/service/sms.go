@@ -1,5 +1,5 @@
 package sms
 
 type SMS interface {
-	Send() error
+	Send(from, to, content, appSid string) error
 }

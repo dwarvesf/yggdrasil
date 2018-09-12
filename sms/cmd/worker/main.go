@@ -15,8 +15,15 @@ import (
 	validator "gopkg.in/validator.v2"
 
 	"github.com/dwarvesf/yggdrasil/sms/model"
+	sms "github.com/dwarvesf/yggdrasil/sms/service"
+	"github.com/dwarvesf/yggdrasil/sms/service/twilio"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
+
+type twilioSecret struct {
+	AppSid    string `json:"sid"`
+	AuthToken string `json:"token"`
+}
 
 func main() {
 	var logger log.Logger
@@ -28,7 +35,7 @@ func main() {
 
 	errs := make(chan error)
 	go func() {
-		logger.Log("worker", "email")
+		logger.Log("worker", "sms")
 		c := make(chan os.Signal)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errs <- fmt.Errorf("%s", <-c)
@@ -62,7 +69,7 @@ func main() {
 
 		r := kafka.NewReader(kafka.ReaderConfig{
 			Brokers: []string{fmt.Sprintf("%v:%v", kafkaAddr, kafkaPort)},
-			Topic:   "email",
+			Topic:   "sms",
 		})
 
 		defer r.Close()
@@ -89,8 +96,18 @@ func main() {
 				logger.Log("error", err)
 				continue
 			}
+			var smser sms.SMS
+			switch req.Provider {
+			case "twilio":
+				v, _ := toolkit.GetConsulValueFromKey(consulClient, "twilio")
+				value := twilioSecret{}
+				if err = json.Unmarshal([]byte(v), &value); err != nil {
+					logger.Log("error", err.Error())
+				}
+				smser = twilio.New(value.AppSid, value.AuthToken)
+				smser.Send(req.From, req.To, req.Content, value.AppSid)
+			}
 
-			// do stuff
 		}
 	}()
 
