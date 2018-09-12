@@ -7,6 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
+	"github.com/dwarvesf/yggdrasil/scheduler/model"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
@@ -16,6 +17,12 @@ type PG struct {
 	DB       string
 }
 
+// Migrate use to migrate database
+func Migrate(db *gorm.DB) {
+	db.AutoMigrate(&model.RequestEntity{})
+}
+
+// New use to connect with database
 func New(c *consul.Client) (*gorm.DB, func()) {
 	pgAddress, pgPort, err := toolkit.GetServiceAddress(c, "postgres")
 	if err != nil {
