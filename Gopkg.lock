@@ -18,9 +18,6 @@
   packages = [
     "endpoint",
     "log",
-    "sd",
-    "sd/consul",
-    "sd/internal/instance",
     "transport/http"
   ]
   revision = "ca4112baa34cb55091301bdc13b1420a122b1b9e"
@@ -64,7 +61,10 @@
 
 [[projects]]
   name = "github.com/jinzhu/gorm"
-  packages = ["."]
+  packages = [
+    ".",
+    "dialects/postgres"
+  ]
   revision = "6ed508ec6a4ecb3531899a69cbc746ccf65a4166"
   version = "v1.9.1"
 
@@ -79,6 +79,16 @@
   name = "github.com/kr/logfmt"
   packages = ["."]
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
+
+[[projects]]
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "hstore",
+    "oid"
+  ]
+  revision = "4ded0e9383f75c197b3a2aaa6d590ac52df6fd79"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/mitchellh/go-homedir"
@@ -122,6 +132,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6036f8e76d87f409d1f1aea1f5cad798c414eaa1a2e455bbbea97dcc2aa773aa"
+  inputs-digest = "ca444a2d68a9a4f21405764365b35846a7ae8d74edf0658e252cdb87e78978ac"
   solver-name = "gps-cdcl"
   solver-version = 1
