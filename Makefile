@@ -39,4 +39,23 @@ up-notification:
 	docker rm -f notification | true && \
 	docker-compose up -d --build --force-recreate; rm server
 
-up: up-email up-sms up-scheduler up-notification
+up: up-email up-sms up-scheduler up-notification up-identity
+
+# Test for email and identity
+test-email:
+	go test ./email/cmd/worker
+
+test-identity:
+	go test ./identity/cmd/server
+
+test-notification:
+	go test ./notification/cmd/worker
+
+test-sms:
+	go test ./sms/cmd/worker
+
+test-payment:
+	got test ./payment/cmd/worker
+
+# Test for all project
+test: test-email test-identity test-notification test-sms test-payment
