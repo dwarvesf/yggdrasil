@@ -91,12 +91,12 @@ func main() {
 				continue
 			}
 
-			var payer payment.Payer
+			var paymentClient payment.Payer
 			switch req.Provider {
 			case "stripe":
 				v, _ := toolkit.GetConsulValueFromKey(consulClient, "stripe")
-				payer = stripe.New(v)
-				payer.Pay(req)
+				paymentClient = stripe.New(v)
+				paymentClient.Pay(req)
 			}
 		}
 	}()
