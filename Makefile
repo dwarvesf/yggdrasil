@@ -55,7 +55,7 @@ test-sms:
 	go test ./sms/cmd/worker
 
 test-payment:
-	got test ./payment/cmd/worker
+	go test ./payment/cmd/worker
 
 # Test for all project
 test: test-email test-identity test-notification test-sms test-payment
