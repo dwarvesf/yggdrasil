@@ -1,23 +1,20 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
-	"github.com/segmentio/kafka-go"
-	validator "gopkg.in/validator.v2"
 
 	"github.com/dwarvesf/yggdrasil/scheduler/db"
-	"github.com/dwarvesf/yggdrasil/scheduler/model"
 	"github.com/dwarvesf/yggdrasil/scheduler/service"
 	"github.com/dwarvesf/yggdrasil/scheduler/service/scheduler"
+	"github.com/dwarvesf/yggdrasil/scheduler/service/worker"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
@@ -57,52 +54,16 @@ func main() {
 		}
 	}()
 
-	var (
-		pgdb, closeDB = db.New(consulClient)
-
-		s = service.Service{
-			SchedulerService: scheduler.NewPGService(pgdb),
-		}
-	)
+	pgdb, closeDB := db.New(consulClient)
+	db.Migrate(pgdb)
+	s := service.Service{
+		SchedulerService: scheduler.NewPGService(pgdb),
+	}
 	defer closeDB()
 
-	go func() {
-		kafkaAddr, kafkaPort, err := toolkit.GetServiceAddress(consulClient, "kafka")
-		if err != nil {
-			panic(err)
-		}
-
-		r := kafka.NewReader(kafka.ReaderConfig{
-			Brokers: []string{fmt.Sprintf("%v:%v", kafkaAddr, kafkaPort)},
-			Topic:   "scheduler",
-		})
-
-		defer r.Close()
-		for {
-			m, err := r.ReadMessage(context.Background())
-			if err != nil {
-				logger.Log("error", err.Error())
-				// TODO: should break or continue if cannot read msg from queue
-				break
-			}
-
-			// TODO: simplify main function
-			var req model.Request
-			if err = json.Unmarshal(m.Value, &req); err != nil {
-				logger.Log("error", err.Error())
-				continue
-			}
-			if err := validator.Validate; err != nil {
-				logger.Log("error", err)
-				continue
-			}
-
-			// Step 1: Validate a message
-			// Step 2: Save message to db
-			// Step 3: Create a go routine to check db every X mins
-			handleMessage(s)
-		}
-	}()
+	w := worker.NewWorker(s, consulClient, logger)
+	go w.HandleRequests(2 * time.Minute)
+	go w.ListenMessages()
 
 	logger.Log("exit", <-errs)
 }

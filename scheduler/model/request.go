@@ -1,10 +1,49 @@
 package model
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+
+	"github.com/jinzhu/gorm"
+)
 
 // Request is a struct define request message taken from queue
 type Request struct {
 	Service   string
 	Payload   map[string]interface{}
 	Timestamp time.Time
+}
+
+// ToBytes convert request to byte array
+func (r Request) ToBytes() ([]byte, error) {
+	res, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// RequestEntity is a struct define request message to be saved in db
+type RequestEntity struct {
+	gorm.Model
+	Service   string
+	Payload   string
+	Timestamp time.Time
+}
+
+// ToRequest convert entity to request
+func (e RequestEntity) ToRequest() (Request, error) {
+	var payload map[string]interface{}
+
+	err := json.Unmarshal([]byte(e.Payload), &payload)
+	if err != nil {
+		return Request{}, err
+	}
+
+	return Request{
+		Service:   e.Service,
+		Payload:   payload,
+		Timestamp: e.Timestamp,
+	}, nil
 }
