@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
@@ -12,12 +10,11 @@ import (
 
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
-	kafka "github.com/segmentio/kafka-go"
 
 	"github.com/dwarvesf/yggdrasil/scheduler/db"
-	"github.com/dwarvesf/yggdrasil/scheduler/model"
 	"github.com/dwarvesf/yggdrasil/scheduler/service"
 	"github.com/dwarvesf/yggdrasil/scheduler/service/scheduler"
+	"github.com/dwarvesf/yggdrasil/scheduler/service/worker"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
@@ -64,68 +61,9 @@ func main() {
 	}
 	defer closeDB()
 
-	// To check db after each X unit of time
-	go checkRequests()
-
-	// To run a forever loop to check queue
-	go checkMessages(s, consulClient, logger)
-
-	// Test send message to queue, will remove later
-	sendMessages(consulClient)
+	w := worker.NewWorker(s, consulClient, logger)
+	go w.HandleRequests(2 * time.Minute)
+	go w.ListenMessages()
 
 	logger.Log("exit", <-errs)
-}
-
-func sendMessages(consulClient *consul.Client) {
-	kafkaAddr, kafkaPort, err := toolkit.GetServiceAddress(consulClient, "kafka")
-	if err != nil {
-		panic(err)
-	}
-
-	w := kafka.NewWriter(kafka.WriterConfig{
-		Brokers:  []string{fmt.Sprintf("%v:%v", kafkaAddr, kafkaPort)},
-		Topic:    "scheduler",
-		Balancer: &kafka.LeastBytes{},
-	})
-	defer w.Close()
-
-	payload := make(map[string]interface{})
-	payload["number"] = 100
-	payload["text"] = "hello world"
-
-	w.WriteMessages(context.Background(),
-		kafka.Message{
-			Key: []byte("test"),
-			Value: toBytes(model.Request{
-				Service:   "test",
-				Payload:   payload,
-				Timestamp: time.Now().Add(time.Second * 10),
-			}),
-		},
-		kafka.Message{
-			Key: []byte("test"),
-			Value: toBytes(model.Request{
-				Service:   "sms",
-				Payload:   payload,
-				Timestamp: time.Now().Add(time.Second * -10),
-			}),
-		},
-		kafka.Message{
-			Key: []byte("test"),
-			Value: toBytes(model.Request{
-				Service:   "notification",
-				Payload:   payload,
-				Timestamp: time.Now().Add(time.Second * 10),
-			}),
-		},
-	)
-}
-
-func toBytes(r model.Request) []byte {
-	out, err := json.Marshal(r)
-	if err != nil {
-		panic(err)
-	}
-
-	return out
 }

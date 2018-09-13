@@ -6,4 +6,6 @@ import (
 
 type Service interface {
 	SaveRequest(r model.RequestEntity) error
+	GetRequests() ([]model.RequestEntity, error)
+	DeleteRequests(ids []uint) error
 }
