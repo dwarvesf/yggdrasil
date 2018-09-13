@@ -93,15 +93,15 @@ func main() {
 
 				ctx := context.Background()
 
-				projectID, projectIDErr := toolkit.GetConsulValueFromKey(consulClient, "project_id")
-				if projectIDErr != nil {
-					logger.Log("exit", err)
-					os.Exit(3)
-				}
-				firebaseNotifier := notification.New(ctx, os.Getenv("CREDENTIAL_FILE"), projectID)
-
 				switch req.Provider {
 				case "firebase":
+					projectID, projectIDErr := toolkit.GetConsulValueFromKey(consulClient, "project_id")
+					if projectIDErr != nil {
+						logger.Log("exit", err)
+						os.Exit(3)
+					}
+					firebaseNotifier := notification.New(ctx, os.Getenv("CREDENTIAL_FILE"), projectID)
+
 					res, sendErr := firebaseNotifier.Send(ctx, req.DeviceToken, req.Body, req.Title)
 					if sendErr != nil {
 						logger.Log(sendErr)
