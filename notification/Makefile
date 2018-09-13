@@ -1,10 +1,10 @@
 .PHONY: build-alpine build dev
 
 build-alpine:
-	GOOS=linux GOARCH=amd64 go build -o server cmd/worker/*.go
+	GOOS=linux GOARCH=amd64 go build -o worker cmd/worker/*.go
 
 build:
-	go build -o server cmd/server/*.go
+	go build -o worker cmd/worker/*.go
 
 dev: build
-	./server; rm server
+	./worker; rm worker
