@@ -57,3 +57,5 @@ Temporary Items
 # End of https://www.gitignore.io/api/go,code,macos
 /.env
 service_account.json
+
+yggdrasil-216009-firebase-adminsdk-cdimi-a653a2d152.json
