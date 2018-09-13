@@ -9,7 +9,9 @@ curl -X PUT --url $PRIVATE_IP:8500/v1/kv/fcm -d $FCM_SERVER_KEY
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/twilio \
     -d '{
     "sid":"'$TWILIO_SID'",
-    "key":"'$TWILIO_KEY'"
+    "key":"'$TWILIO_KEY'",
+    "token":"'$TWILIO_TOKEN'",
+    "number":"'$TWILIO_NUMBER'"
 }'
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/stripe \
     -d '{

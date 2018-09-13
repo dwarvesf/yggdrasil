@@ -15,6 +15,8 @@ import (
 	validator "gopkg.in/validator.v2"
 
 	"github.com/dwarvesf/yggdrasil/sms/model"
+	sms "github.com/dwarvesf/yggdrasil/sms/service"
+	"github.com/dwarvesf/yggdrasil/sms/service/twilio"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
@@ -28,7 +30,7 @@ func main() {
 
 	errs := make(chan error)
 	go func() {
-		logger.Log("worker", "email")
+		logger.Log("worker", "sms")
 		c := make(chan os.Signal)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errs <- fmt.Errorf("%s", <-c)
@@ -62,7 +64,7 @@ func main() {
 
 		r := kafka.NewReader(kafka.ReaderConfig{
 			Brokers: []string{fmt.Sprintf("%v:%v", kafkaAddr, kafkaPort)},
-			Topic:   "email",
+			Topic:   "sms",
 		})
 
 		defer r.Close()
@@ -89,8 +91,18 @@ func main() {
 				logger.Log("error", err)
 				continue
 			}
+			var smsClient sms.SMS
+			switch req.Provider {
+			case "twilio":
+				v, _ := toolkit.GetConsulValueFromKey(consulClient, "twilio")
+				value := model.TwilioSecret{}
+				if err = json.Unmarshal([]byte(v), &value); err != nil {
+					logger.Log("error", err.Error())
+				}
+				smsClient = twilio.New(value.AppSid, value.AuthToken)
+				smsClient.Send(value.AppNumber, req.To, req.Content, value.AppSid)
+			}
 
-			// do stuff
 		}
 	}()
 
