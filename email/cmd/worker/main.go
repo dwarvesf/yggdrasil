@@ -12,7 +12,6 @@ import (
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 	"github.com/segmentio/kafka-go"
-	validator "gopkg.in/validator.v2"
 
 	"github.com/dwarvesf/yggdrasil/email/model"
 	email "github.com/dwarvesf/yggdrasil/email/service"
@@ -75,7 +74,7 @@ func main() {
 				// TODO: should break or continue if cannot read msg from queue
 				break
 			}
-			// fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
+
 			if string(m.Value) == "" {
 				continue
 			}
@@ -84,10 +83,6 @@ func main() {
 			var req model.Request
 			if err = json.Unmarshal(m.Value, &req); err != nil {
 				logger.Log("error", err.Error())
-				continue
-			}
-			if err := validator.Validate; err != nil {
-				logger.Log("error", err)
 				continue
 			}
 
