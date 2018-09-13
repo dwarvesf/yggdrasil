@@ -20,11 +20,6 @@ import (
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
-type twilioSecret struct {
-	AppSid    string `json:"sid"`
-	AuthToken string `json:"token"`
-}
-
 func main() {
 	var logger log.Logger
 	{
@@ -96,16 +91,16 @@ func main() {
 				logger.Log("error", err)
 				continue
 			}
-			var smser sms.SMS
+			var smsClient sms.SMS
 			switch req.Provider {
 			case "twilio":
 				v, _ := toolkit.GetConsulValueFromKey(consulClient, "twilio")
-				value := twilioSecret{}
+				value := model.TwilioSecret{}
 				if err = json.Unmarshal([]byte(v), &value); err != nil {
 					logger.Log("error", err.Error())
 				}
-				smser = twilio.New(value.AppSid, value.AuthToken)
-				smser.Send(req.From, req.To, req.Content, value.AppSid)
+				smsClient = twilio.New(value.AppSid, value.AuthToken)
+				smsClient.Send(value.AppNumber, req.To, req.Content, value.AppSid)
 			}
 
 		}
