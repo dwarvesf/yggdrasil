@@ -58,4 +58,4 @@ test-payment:
 	go test ./payment/cmd/worker
 
 # Test for all project
-test: test-email test-identity test-notification test-sms test-payment
+test: test-email test-identity test-notification test-sms
