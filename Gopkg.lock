@@ -124,6 +124,17 @@
   version = "v3.4.1"
 
 [[projects]]
+  name = "github.com/stripe/stripe-go"
+  packages = [
+    ".",
+    "charge",
+    "customer",
+    "form"
+  ]
+  revision = "e9c94ea927946d963120999d50dd6384b46b563f"
+  version = "v49.1.0"
+
+[[projects]]
   branch = "v2"
   name = "gopkg.in/validator.v2"
   packages = ["."]
@@ -132,6 +143,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ca444a2d68a9a4f21405764365b35846a7ae8d74edf0658e252cdb87e78978ac"
+  inputs-digest = "41caa7b886b6834705c9d0a73c837e9c4d7e929c452147a6d6ee573d6acececb"
   solver-name = "gps-cdcl"
   solver-version = 1
