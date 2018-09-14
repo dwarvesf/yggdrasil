@@ -1,0 +1,6 @@
+test:
+  adapter: postgresql
+  database: yggdrasil_test
+  username: admin
+  password: 123
+  

@@ -1,0 +1,44 @@
+language: go
+
+go: "1.10"
+
+git:
+  depth: 1
+
+services:
+  - postgresql
+
+before_script:
+  - psql -c 'create database yggdrasil_test;' -U postgres
+  - cp config/database.yml.travis config/database.yml
+  - go get firebase.google.com/go
+  - go get github.com/dgrijalva/jwt-go
+  - go get github.com/gorilla/schema
+
+env:
+  global:
+    - PORT=3000
+
+jobs:
+  include:
+    - stage: email
+      script: make test-email
+      if: branch =~ /^feature\/email(\/.*$|)/
+    - stage: identity
+      script: make test-identity
+      if: branch =~ /^feature\/identity(\/.*$|)/
+    - stage: travis
+      script: echo "Travis success"
+      if: branch = feature/travis-ci
+    - stage: develop
+      script: make test
+      if: branch = develop
+    - stage: notification
+      script: make test-notification
+      if: branch =~ /^feature\/notification(\/.*$|)/
+    - stage: sms
+      script: make test-sms
+      if: branch =~ /^feature\/sms(\/.*$|)/
+    - stage: payment
+      script: make test-payment
+      if: branch =~ /^feature\/payment(\/.*$|)/

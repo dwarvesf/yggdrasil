@@ -1,7 +1,7 @@
 .PHONY: build-alpine build dev
 
 build-alpine:
-	GOOS=linux GOARCH=amd64 go build -o worker cmd/worker/*.go
+	CGO_ENABLED=0  GOOS=linux GOARCH=amd64 go build -o worker cmd/worker/*.go
 
 build:
 	go build -o worker cmd/worker/*.go
