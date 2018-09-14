@@ -74,6 +74,7 @@ func (w *workerImpl) HandleRequests(d time.Duration) {
 			}
 		}
 
+		w.Logger.Log("sending", "success")
 		w.deleteRequests(requests)
 	}
 }
@@ -123,18 +124,19 @@ func (w *workerImpl) ListenMessages() {
 			w.Logger.Log("error", err.Error())
 			continue
 		}
+
+		w.Logger.Log("saving", "success")
 	}
 }
 
 func sendRequest(r model.Request, brokers []string) error {
 	writer := kafka.NewWriter(kafka.WriterConfig{
-		Brokers:  brokers,
-		Topic:    r.Service,
-		Balancer: &kafka.LeastBytes{},
+		Brokers: brokers,
+		Topic:   r.Service,
 	})
 	defer writer.Close()
 
-	value, err := r.ToBytes()
+	payload, err := json.Marshal(r.Payload)
 	if err != nil {
 		return err
 	}
@@ -143,7 +145,7 @@ func sendRequest(r model.Request, brokers []string) error {
 		context.Background(),
 		kafka.Message{
 			Key:   []byte("scheduler"),
-			Value: value,
+			Value: payload,
 		},
 	)
 	if err != nil {
