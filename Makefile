@@ -42,7 +42,7 @@ up-scheduler:
 up-notification:
 	cd $(SRCPATH)/notification && make build-alpine && \
 	docker rm -f notification | true && \
-	docker-compose up -d --build --force-recreate; rm server
+	docker-compose up -d --build --force-recreate; rm worker
 
 up: up-email up-sms up-scheduler up-identity up-payment up-notification
 
