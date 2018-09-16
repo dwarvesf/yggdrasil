@@ -28,15 +28,7 @@ func (s *pgService) DeleteRequests(ids []uint) error {
 func (s *pgService) GetRequests() ([]model.RequestEntity, error) {
 	var requests []model.RequestEntity
 
-	err := s.db.
-		Where("timestamp < ?", time.Now()).
-		Find(&requests).
-		Error
-	if err != nil {
-		return nil, err
-	}
-
-	return requests, nil
+	return requests, s.db.Where("timestamp < ?", time.Now()).Find(&requests).Error
 }
 
 func (s *pgService) SaveRequest(r model.RequestEntity) error {
