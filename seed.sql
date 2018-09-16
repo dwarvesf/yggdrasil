@@ -12,6 +12,7 @@ SET standard_conforming_strings = on;
 --
 
 CREATE DATABASE scheduler WITH TEMPLATE = template0 OWNER = postgres;
+CREATE DATABASE identity WITH TEMPLATE = template0 OWNER = postgres;
 REVOKE CONNECT,TEMPORARY ON DATABASE template1 FROM PUBLIC;
 
 

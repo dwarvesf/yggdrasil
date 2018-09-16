@@ -25,3 +25,9 @@ curl -X PUT --url $PRIVATE_IP:8500/v1/kv/db-scheduler \
     "password": "123",
     "db": "scheduler"
 }'
+curl -X PUT --url $PRIVATE_IP:8500/v1/kv/db-identity \
+    -d '{
+    "user": "admin",
+    "password": "123",
+    "db": "identity"
+}'

@@ -12,12 +12,12 @@ import (
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 
+	"github.com/dwarvesf/yggdrasil/identity/db"
 	"github.com/dwarvesf/yggdrasil/identity/endpoints"
 	serviceHttp "github.com/dwarvesf/yggdrasil/identity/http"
 	"github.com/dwarvesf/yggdrasil/identity/middlewares"
-	"github.com/dwarvesf/yggdrasil/identity/postgres"
 	"github.com/dwarvesf/yggdrasil/identity/service"
-	"github.com/dwarvesf/yggdrasil/identity/service/add"
+	"github.com/dwarvesf/yggdrasil/identity/service/user"
 )
 
 func main() {
@@ -33,22 +33,24 @@ func main() {
 		logger = log.With(logger, "caller", log.DefaultCaller)
 	}
 
+	consulClient, err := consul.NewClient(&consul.Config{
+		Address: fmt.Sprintf("consul:8500"),
+	})
+	if err != nil {
+		panic(err)
+	}
+
 	// FIXME: replace this with `postgres.New()`
-	pgdb, close := postgres.NewFake(os.Getenv("PG_DATASOURCE"))
-	defer func() {
-		if err := close(); err != nil {
-			logger.Log("msg", "failed to close postgres connection", "err", err)
-		}
-	}()
+	pgdb, closeDB := db.New(consulClient)
+	db.Migrate(pgdb)
+	defer closeDB()
 
 	var s service.Service
 	{
 		s = service.Service{
-			AddService: middlewares.Compose(
-				postgres.NewAddStore(pgdb),
-				add.LoggingMiddleware(logger),
-				add.ValidationMiddleware(),
-			).(add.Service),
+			UserService: middlewares.Compose(
+				user.NewPGService(pgdb),
+			).(user.Service),
 		}
 	}
 
@@ -75,13 +77,7 @@ func main() {
 			panic(err)
 		}
 
-		client, err := consul.NewClient(&consul.Config{
-			Address: fmt.Sprintf("consul:8500"),
-		})
-		if err != nil {
-			panic(err)
-		}
-		agent := client.Agent()
+		agent := consulClient.Agent()
 
 		name := "identity"
 		if err := agent.ServiceRegister(&consul.AgentServiceRegistration{

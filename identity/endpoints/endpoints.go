@@ -7,12 +7,12 @@ import (
 )
 
 type Endpoints struct {
-	Add endpoint.Endpoint
+	GetUser endpoint.Endpoint
 }
 
 // MakeServerEndpoints returns an Endpoints struct
 func MakeServerEndpoints(s service.Service) Endpoints {
 	return Endpoints{
-		Add: MakeAddEndpoint(s),
+		GetUser: MakeGetUserEndpoint(s),
 	}
 }

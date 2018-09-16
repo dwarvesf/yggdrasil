@@ -10,6 +10,8 @@ services:
     external_links:
       - consul
       - service_mesh_db
+    ports:
+      - ${PORT}:${PORT}
     networks:
       service-mesh:
         ipv4_address: 10.5.0.7

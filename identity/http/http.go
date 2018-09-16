@@ -1,8 +1,6 @@
 package http
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -34,19 +32,14 @@ func NewHTTPHandler(s service.Service, endpoints endpoints.Endpoints, logger log
 	}
 
 	// endpoints
-	r.Post("/add", httptransport.NewServer(
-		endpoints.Add,
-		DecodeAddRequest,
-		encodeResponse,
-		options...,
-	).ServeHTTP)
+	r.Route("/users", func(r chi.Router) {
+		r.Get("/{id}", httptransport.NewServer(
+			endpoints.GetUser,
+			DecodeGetUserRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP)
+	})
 
 	return r
-}
-
-// DecodeAddRequest ...
-func DecodeAddRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req endpoints.AddRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	return req, err
 }

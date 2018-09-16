@@ -1,8 +1,10 @@
 package service
 
-import "github.com/dwarvesf/yggdrasil/identity/service/add"
+import (
+	"github.com/dwarvesf/yggdrasil/identity/service/user"
+)
 
 // Service ...
 type Service struct {
-	AddService add.Service
+	UserService user.Service
 }
