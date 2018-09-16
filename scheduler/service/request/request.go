@@ -1,4 +1,4 @@
-package scheduler
+package request
 
 import (
 	"github.com/dwarvesf/yggdrasil/scheduler/model"

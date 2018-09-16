@@ -1,7 +1,11 @@
 package service
 
-import "github.com/dwarvesf/yggdrasil/scheduler/service/scheduler"
+import (
+	"github.com/dwarvesf/yggdrasil/scheduler/service/request"
+	"github.com/dwarvesf/yggdrasil/scheduler/service/stream"
+)
 
 type Service struct {
-	SchedulerService scheduler.Service
+	RequestService request.Service
+	StreamService  stream.Service
 }
