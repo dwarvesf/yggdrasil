@@ -14,8 +14,8 @@ import (
 	"github.com/dwarvesf/yggdrasil/scheduler/db"
 	"github.com/dwarvesf/yggdrasil/scheduler/scheduler"
 	"github.com/dwarvesf/yggdrasil/scheduler/service"
+	"github.com/dwarvesf/yggdrasil/scheduler/service/message"
 	"github.com/dwarvesf/yggdrasil/scheduler/service/request"
-	"github.com/dwarvesf/yggdrasil/scheduler/service/stream"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
@@ -59,7 +59,7 @@ func main() {
 	db.Migrate(pgdb)
 	s := service.Service{
 		RequestService: request.NewPGService(pgdb),
-		StreamService:  stream.NewKafkaService(consulClient),
+		MessageService: message.NewKafkaService(consulClient),
 	}
 	defer closeDB()
 

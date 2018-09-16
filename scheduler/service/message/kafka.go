@@ -1,4 +1,4 @@
-package stream
+package message
 
 import (
 	"context"
@@ -9,16 +9,16 @@ import (
 	kafka "github.com/segmentio/kafka-go"
 )
 
-// Stream writer implementation
-type kafkaStreamWriter struct {
+// Message writer implementation
+type kafkaWriter struct {
 	Writer *kafka.Writer
 }
 
-func (w *kafkaStreamWriter) Close() error {
+func (w *kafkaWriter) Close() error {
 	return w.Writer.Close()
 }
 
-func (w *kafkaStreamWriter) WriteMessage(value []byte) error {
+func (w *kafkaWriter) WriteMessage(value []byte) error {
 	return w.Writer.WriteMessages(
 		context.Background(),
 		kafka.Message{
@@ -28,16 +28,16 @@ func (w *kafkaStreamWriter) WriteMessage(value []byte) error {
 	)
 }
 
-// Stream reader implementation
-type kafkaStreamReader struct {
+// Message reader implementation
+type kafkaReader struct {
 	Reader *kafka.Reader
 }
 
-func (r *kafkaStreamReader) Close() error {
+func (r *kafkaReader) Close() error {
 	return r.Reader.Close()
 }
 
-func (r *kafkaStreamReader) ReadMessage() ([]byte, error) {
+func (r *kafkaReader) ReadMessage() ([]byte, error) {
 	message, err := r.Reader.ReadMessage(context.Background())
 	if err != nil {
 		return nil, err
@@ -60,7 +60,7 @@ func NewKafkaService(consulClient *consul.Client) Service {
 
 // NewReader return a new writer for kafka service
 func (s *kafkaService) NewWriter(topic string) Writer {
-	return &kafkaStreamWriter{
+	return &kafkaWriter{
 		Writer: kafka.NewWriter(kafka.WriterConfig{
 			Brokers: s.getBrokers(),
 			Topic:   topic,
@@ -70,7 +70,7 @@ func (s *kafkaService) NewWriter(topic string) Writer {
 
 // NewReader return a new reader for kafka service
 func (s *kafkaService) NewReader() Reader {
-	return &kafkaStreamReader{
+	return &kafkaReader{
 		Reader: kafka.NewReader(kafka.ReaderConfig{
 			Brokers: s.getBrokers(),
 			Topic:   "scheduler",

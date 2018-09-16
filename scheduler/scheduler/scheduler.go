@@ -66,7 +66,7 @@ func (s *schedulerImpl) HandleRequests(d time.Duration) {
 }
 
 func (s *schedulerImpl) sendRequest(r model.Request) error {
-	w := s.Service.StreamService.NewWriter(r.Service)
+	w := s.Service.MessageService.NewWriter(r.Service)
 	defer w.Close()
 
 	payload, err := json.Marshal(r.Payload)
@@ -97,7 +97,7 @@ func (s *schedulerImpl) deleteRequests(requests []model.RequestEntity) {
 
 // ListenMessages will continuosly check for messages in kafka and save to db
 func (s *schedulerImpl) ListenMessages() {
-	r := s.Service.StreamService.NewReader()
+	r := s.Service.MessageService.NewReader()
 	defer r.Close()
 
 	for {

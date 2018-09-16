@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/dwarvesf/yggdrasil/scheduler/model"
-	"github.com/dwarvesf/yggdrasil/scheduler/service/stream"
+	"github.com/dwarvesf/yggdrasil/scheduler/service/message"
 )
 
 // MockPayload to mock payload data
@@ -51,14 +51,14 @@ type Output struct {
 	Data  []byte
 }
 
-// MockStreamService to mock StreamService
-type MockStreamService struct {
+// MockMessageService to mock message Service
+type MockMessageService struct {
 	ReadData  chan []byte
 	WriteData chan Output
 }
 
 // NewWriter is mock implementation
-func (s *MockStreamService) NewWriter(topic string) stream.Writer {
+func (s *MockMessageService) NewWriter(topic string) message.Writer {
 	return &mockWriter{
 		Service: s,
 		Topic:   topic,
@@ -66,14 +66,14 @@ func (s *MockStreamService) NewWriter(topic string) stream.Writer {
 }
 
 // NewReader is mock implementation
-func (s *MockStreamService) NewReader() stream.Reader {
+func (s *MockMessageService) NewReader() message.Reader {
 	return &mockReader{
 		Service: s,
 	}
 }
 
 type mockWriter struct {
-	Service *MockStreamService
+	Service *MockMessageService
 	Topic   string
 }
 
@@ -88,7 +88,7 @@ func (w *mockWriter) WriteMessage(data []byte) error {
 }
 
 type mockReader struct {
-	Service *MockStreamService
+	Service *MockMessageService
 }
 
 func (r *mockReader) ReadMessage() ([]byte, error) {

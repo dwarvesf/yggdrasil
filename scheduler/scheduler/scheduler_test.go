@@ -17,12 +17,12 @@ func TestListenMessagesWhenMessageExpiredShouldNotSave(t *testing.T) {
 	requestService := &testutils.MockRequestService{
 		Requests: make([]model.RequestEntity, 0),
 	}
-	streamService := &testutils.MockStreamService{
+	messageService := &testutils.MockMessageService{
 		ReadData: requests,
 	}
 	s := service.Service{
 		RequestService: requestService,
-		StreamService:  streamService,
+		MessageService: messageService,
 	}
 
 	sch := NewScheduler(s, log.NewNopLogger())
@@ -48,12 +48,12 @@ func TestListenMessagesWhenInvalidServiceShouldNotSave(t *testing.T) {
 	requestService := &testutils.MockRequestService{
 		Requests: make([]model.RequestEntity, 0),
 	}
-	streamService := &testutils.MockStreamService{
+	messageService := &testutils.MockMessageService{
 		ReadData: requests,
 	}
 	s := service.Service{
 		RequestService: requestService,
-		StreamService:  streamService,
+		MessageService: messageService,
 	}
 
 	sch := NewScheduler(s, log.NewNopLogger())
@@ -79,12 +79,12 @@ func TestListenMessagesWhenMessageValidShouldSave(t *testing.T) {
 	requestService := &testutils.MockRequestService{
 		Requests: make([]model.RequestEntity, 0),
 	}
-	streamService := &testutils.MockStreamService{
+	messageService := &testutils.MockMessageService{
 		ReadData: requests,
 	}
 	s := service.Service{
 		RequestService: requestService,
-		StreamService:  streamService,
+		MessageService: messageService,
 	}
 
 	sch := NewScheduler(s, log.NewNopLogger())
@@ -129,12 +129,12 @@ func TestHandleRequests(t *testing.T) {
 	requestService := &testutils.MockRequestService{
 		Requests: requests,
 	}
-	streamService := &testutils.MockStreamService{
+	messageService := &testutils.MockMessageService{
 		WriteData: writeMessages,
 	}
 	s := service.Service{
 		RequestService: requestService,
-		StreamService:  streamService,
+		MessageService: messageService,
 	}
 
 	sch := NewScheduler(s, log.NewNopLogger())
