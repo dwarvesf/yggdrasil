@@ -13,22 +13,23 @@ import (
 
 // Kafka implementation
 type Kafka struct {
-	Consul *consul.Client
-	Writer *gokafka.Writer
-	Reader *gokafka.Reader
+	Consul  *consul.Client
+	address []string
 }
 
 // New return a new kafka queue
 func New(consulClient *consul.Client) queue.Queue {
-	return &Kafka{
+	k := &Kafka{
 		Consul: consulClient,
 	}
+	k.address = k.getBrokers()
+	return k
 }
 
 // Write return a new writer for kafka Queue
 func (k *Kafka) Write(topic string, value []byte) error {
 	w := gokafka.NewWriter(gokafka.WriterConfig{
-		Brokers: k.getBrokers(),
+		Brokers: k.address,
 		Topic:   topic,
 	})
 	defer w.Close()
@@ -44,7 +45,7 @@ func (k *Kafka) Write(topic string, value []byte) error {
 // Read return a new reader for kafka Queue
 func (k *Kafka) Read(topic string) []byte {
 	r := gokafka.NewReader(gokafka.ReaderConfig{
-		Brokers: k.getBrokers(),
+		Brokers: k.address,
 		Topic:   topic,
 	})
 	defer r.Close()
