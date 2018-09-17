@@ -8,7 +8,7 @@ services:
     env_file:
       - .env
     external_links:
-      - consul
+      - consul:consul-server
       - service_mesh_db
     networks:
       service-mesh:

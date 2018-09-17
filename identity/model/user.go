@@ -2,14 +2,6 @@ package model
 
 import "github.com/jinzhu/gorm/dialects/postgres"
 
-type LoginType string
-
-const (
-	LoginTypeEmail       LoginType = "email"
-	LoginTypeUsername    LoginType = "username"
-	LoginTypePhoneNumber LoginType = "phone_number"
-)
-
 type UserStatus uint8
 
 const (
@@ -23,7 +15,6 @@ type User struct {
 	Email       string         `json:"email" gorm:"default:''"`
 	Username    string         `json:"username" gorm:"default:''"`
 	PhoneNumber string         `json:"phone_number" gorm:"default:''"`
-	LoginType   LoginType      `json:"login_type" sql:"-"`
 	Password    string         `json:"password" gorm:"default:''"`
 	Salt        string         `json:"salt" gorm:"default:''"`
 	Status      UserStatus     `json:"status" gorm:"default:'1'"`

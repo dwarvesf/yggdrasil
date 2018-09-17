@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
-	"github.com/segmentio/kafka-go"
 	validator "gopkg.in/validator.v2"
 
 	"github.com/dwarvesf/yggdrasil/sms/model"
@@ -37,7 +36,7 @@ func main() {
 	}()
 
 	consulClient, err := consul.NewClient(&consul.Config{
-		Address: fmt.Sprintf("consul:8500"),
+		Address: fmt.Sprintf("consul-server:8500"),
 	})
 	if err != nil {
 		panic(err)
@@ -57,20 +56,12 @@ func main() {
 	}()
 
 	go func() {
-		kafkaAddr, kafkaPort, err := toolkit.GetServiceAddress(consulClient, "kafka")
-		if err != nil {
-			panic(err)
-		}
-
-		r := kafka.NewReader(kafka.ReaderConfig{
-			Brokers: []string{fmt.Sprintf("%v:%v", kafkaAddr, kafkaPort)},
-			Topic:   "sms",
-		})
-
-		defer r.Close()
+		kafka := toolkit.Kafka{Consul: consulClient}
+		kafka.New("sms")
+		defer kafka.Reader.Close()
 
 		for {
-			m, err := r.ReadMessage(context.Background())
+			m, err := kafka.Reader.ReadMessage(context.Background())
 			if err != nil {
 				logger.Log("error", err.Error())
 				// TODO: should break or continue if cannot read msg from queue
