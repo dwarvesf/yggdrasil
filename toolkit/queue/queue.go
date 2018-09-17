@@ -2,7 +2,7 @@ package queue
 
 // Queue represent message queue functions
 type Queue interface {
-	Write(topic string, value [][]byte) error
-	Read(topic string) []byte
+	Write(value [][]byte) error
+	Read() []byte
 	Close() (error, error)
 }

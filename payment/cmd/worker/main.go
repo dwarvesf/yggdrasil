@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -17,6 +16,8 @@ import (
 	payment "github.com/dwarvesf/yggdrasil/payment/service"
 	"github.com/dwarvesf/yggdrasil/payment/service/stripe"
 	"github.com/dwarvesf/yggdrasil/toolkit"
+	"github.com/dwarvesf/yggdrasil/toolkit/queue"
+	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
 )
 
 func main() {
@@ -56,25 +57,15 @@ func main() {
 	}()
 
 	go func() {
-		kafka := toolkit.Kafka{Consul: consulClient}
-		kafka.New("payment")
-		defer kafka.Reader.Close()
-
+		var q queue.Queue
+		q = kafka.New(consulClient, "payment")
+		defer q.Close()
 		for {
-			m, err := kafka.Reader.ReadMessage(context.Background())
-			if err != nil {
-				logger.Log("error", err.Error())
-				// TODO: should break or continue if cannot read msg from queue
-				break
-			}
-			// fmt.Printf("message at topic/partition/offset %v/%v/%v: %s = %s\n", m.Topic, m.Partition, m.Offset, string(m.Key), string(m.Value))
-			if string(m.Value) == "" {
-				continue
-			}
+			b := q.Read()
 
 			// TODO: simplify main function
 			var req model.Request
-			if err = json.Unmarshal(m.Value, &req); err != nil {
+			if err = json.Unmarshal(b, &req); err != nil {
 				logger.Log("error", err.Error())
 				continue
 			}

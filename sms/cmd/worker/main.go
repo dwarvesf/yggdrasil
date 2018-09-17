@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -17,6 +16,8 @@ import (
 	sms "github.com/dwarvesf/yggdrasil/sms/service"
 	"github.com/dwarvesf/yggdrasil/sms/service/twilio"
 	"github.com/dwarvesf/yggdrasil/toolkit"
+	"github.com/dwarvesf/yggdrasil/toolkit/queue"
+	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
 )
 
 func main() {
@@ -56,24 +57,16 @@ func main() {
 	}()
 
 	go func() {
-		kafka := toolkit.Kafka{Consul: consulClient}
-		kafka.New("sms")
-		defer kafka.Reader.Close()
+		var q queue.Queue
+		q = kafka.New(consulClient, "sms")
+		defer q.Close()
 
 		for {
-			m, err := kafka.Reader.ReadMessage(context.Background())
-			if err != nil {
-				logger.Log("error", err.Error())
-				// TODO: should break or continue if cannot read msg from queue
-				break
-			}
-			if string(m.Value) == "" {
-				continue
-			}
+			b := q.Read()
 
 			var req model.Request
 
-			if err = json.Unmarshal(m.Value, &req); err != nil {
+			if err = json.Unmarshal(b, &req); err != nil {
 				logger.Log("error", err.Error())
 				continue
 			}

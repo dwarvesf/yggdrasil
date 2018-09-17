@@ -59,11 +59,11 @@ func main() {
 
 	go func() {
 		var q queue.Queue
-		q = kafka.New(consulClient)
+		q = kafka.New(consulClient, "email")
 		defer q.Close()
 
 		for {
-			b := q.Read("email")
+			b := q.Read()
 
 			var req model.Request
 			if err = json.Unmarshal(b, &req); err != nil {

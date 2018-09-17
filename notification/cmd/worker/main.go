@@ -16,6 +16,8 @@ import (
 	"github.com/dwarvesf/yggdrasil/notification/model"
 	notification "github.com/dwarvesf/yggdrasil/notification/service"
 	"github.com/dwarvesf/yggdrasil/toolkit"
+	"github.com/dwarvesf/yggdrasil/toolkit/queue"
+	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
 )
 
 func main() {
@@ -55,59 +57,47 @@ func main() {
 	}()
 
 	go func() {
-		kafka := toolkit.Kafka{Consul: consulClient}
-		kafka.New("notification")
-		defer kafka.Reader.Close()
+		var q queue.Queue
+		q = kafka.New(consulClient, "notification")
+		defer q.Close()
 
-		go func() {
-			for {
-				m, err := kafka.Reader.ReadMessage(context.Background())
-				if err != nil {
-					logger.Log("error", err.Error())
-					break
-				}
+		for {
+			b := q.Read()
 
-				if string(m.Value) == "" {
-					continue
-				}
-
-				// TODO: simplify main function
-				var req model.Request
-				if err = json.Unmarshal(m.Value, &req); err != nil {
-					logger.Log("error", err.Error())
-					continue
-				}
-				if err := validator.Validate; err != nil {
-					logger.Log("error", err)
-					continue
-				}
-
-				ctx := context.Background()
-
-				switch req.Provider {
-				case "firebase":
-					projectID, projectIDErr := toolkit.GetConsulValueFromKey(consulClient, "project_id")
-					if projectIDErr != nil {
-						logger.Log("exit", err)
-						os.Exit(3)
-					}
-					firebaseNotifier := notification.New(ctx, os.Getenv("CREDENTIAL_FILE"), projectID)
-
-					res, sendErr := firebaseNotifier.Send(ctx, req.DeviceToken, req.Body, req.Title)
-					if sendErr != nil {
-						logger.Log(sendErr)
-						continue
-					}
-					logger.Log(res)
-
-					//Case use different notification provider, must send notify depend on req.DeviceType
-				default:
-					logger.Log("Provider not support")
-				}
-
+			// TODO: simplify main function
+			var req model.Request
+			if err = json.Unmarshal(b, &req); err != nil {
+				logger.Log("error", err.Error())
+				continue
 			}
-		}()
+			if err := validator.Validate; err != nil {
+				logger.Log("error", err)
+				continue
+			}
 
+			ctx := context.Background()
+
+			switch req.Provider {
+			case "firebase":
+				projectID, projectIDErr := toolkit.GetConsulValueFromKey(consulClient, "project_id")
+				if projectIDErr != nil {
+					logger.Log("exit", err)
+					os.Exit(3)
+				}
+				firebaseNotifier := notification.New(ctx, os.Getenv("CREDENTIAL_FILE"), projectID)
+
+				res, sendErr := firebaseNotifier.Send(ctx, req.DeviceToken, req.Body, req.Title)
+				if sendErr != nil {
+					logger.Log(sendErr)
+					continue
+				}
+				logger.Log(res)
+
+				//Case use different notification provider, must send notify depend on req.DeviceType
+			default:
+				logger.Log("Provider not support")
+			}
+		}
 	}()
 
 	logger.Log("exit", <-errs)

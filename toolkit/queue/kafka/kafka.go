@@ -15,6 +15,7 @@ import (
 type Kafka struct {
 	Consul  *consul.Client
 	address []string
+	topic   string
 	Reader  *gokafka.Reader
 	Writter *gokafka.Writer
 }
@@ -23,23 +24,24 @@ type Kafka struct {
 func New(consulClient *consul.Client, topic string) queue.Queue {
 	k := &Kafka{Consul: consulClient}
 	k.address = k.getBrokers()
+	k.topic = topic
 	k.Writter = gokafka.NewWriter(gokafka.WriterConfig{
 		Brokers: k.address,
-		Topic:   topic,
+		Topic:   k.topic,
 	})
 	k.Reader = gokafka.NewReader(gokafka.ReaderConfig{
 		Brokers: k.address,
-		Topic:   topic,
+		Topic:   k.topic,
 	})
 	return k
 }
 
 // Write msg to kafka queue
-func (k *Kafka) Write(topic string, values [][]byte) error {
+func (k *Kafka) Write(values [][]byte) error {
 	var msgs []gokafka.Message
 	for _, v := range values {
 		msgs = append(msgs, gokafka.Message{
-			Key:   []byte(topic),
+			Key:   []byte(k.topic),
 			Value: v,
 		})
 	}
@@ -50,7 +52,7 @@ func (k *Kafka) Write(topic string, values [][]byte) error {
 }
 
 // Read msg from kafka queue§
-func (k *Kafka) Read(topic string) []byte {
+func (k *Kafka) Read() []byte {
 	var b []byte
 	for {
 		m, err := k.Reader.ReadMessage(context.Background())
