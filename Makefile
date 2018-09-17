@@ -62,5 +62,8 @@ test-sms:
 test-payment:
 	go test ./payment/cmd/worker
 
+test-scheduler:
+	go test ./scheduler/...
+
 # Test for all project
-test: test-email test-identity test-notification test-sms
+test: test-email test-identity test-notification test-sms test-scheduler

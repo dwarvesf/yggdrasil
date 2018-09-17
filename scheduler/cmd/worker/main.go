@@ -12,9 +12,10 @@ import (
 	consul "github.com/hashicorp/consul/api"
 
 	"github.com/dwarvesf/yggdrasil/scheduler/db"
+	"github.com/dwarvesf/yggdrasil/scheduler/scheduler"
 	"github.com/dwarvesf/yggdrasil/scheduler/service"
-	"github.com/dwarvesf/yggdrasil/scheduler/service/scheduler"
-	"github.com/dwarvesf/yggdrasil/scheduler/service/worker"
+	"github.com/dwarvesf/yggdrasil/scheduler/service/message"
+	"github.com/dwarvesf/yggdrasil/scheduler/service/request"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
@@ -57,13 +58,14 @@ func main() {
 	pgdb, closeDB := db.New(consulClient)
 	db.Migrate(pgdb)
 	s := service.Service{
-		SchedulerService: scheduler.NewPGService(pgdb),
+		RequestService: request.NewPGService(pgdb),
+		MessageService: message.NewKafkaService(consulClient),
 	}
 	defer closeDB()
 
-	w := worker.NewWorker(s, consulClient, logger)
-	go w.HandleRequests(2 * time.Minute)
-	go w.ListenMessages()
+	sch := scheduler.NewScheduler(s, logger)
+	go sch.HandleRequests(2 * time.Minute)
+	go sch.ListenMessages()
 
 	logger.Log("exit", <-errs)
 }
