@@ -4,5 +4,5 @@ package queue
 type Queue interface {
 	Write(topic string, value [][]byte) error
 	Read(topic string) []byte
-	Close() error
+	Close() (error, error)
 }
