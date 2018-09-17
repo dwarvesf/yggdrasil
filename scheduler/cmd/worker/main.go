@@ -36,7 +36,7 @@ func main() {
 	}()
 
 	consulClient, err := consul.NewClient(&consul.Config{
-		Address: fmt.Sprintf("consul:8500"),
+		Address: fmt.Sprintf("consul-server:8500"),
 	})
 	if err != nil {
 		panic(err)

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,9 +8,12 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
+
+	"github.com/dwarvesf/yggdrasil/toolkit/queue"
+
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
-	"github.com/segmentio/kafka-go"
 
 	"github.com/dwarvesf/yggdrasil/email/model"
 	email "github.com/dwarvesf/yggdrasil/email/service"
@@ -36,7 +38,7 @@ func main() {
 	}()
 
 	consulClient, err := consul.NewClient(&consul.Config{
-		Address: fmt.Sprintf("consul:8500"),
+		Address: fmt.Sprintf("consul-server:8500"),
 	})
 	if err != nil {
 		panic(err)
@@ -56,32 +58,15 @@ func main() {
 	}()
 
 	go func() {
-		kafkaAddr, kafkaPort, err := toolkit.GetServiceAddress(consulClient, "kafka")
-		if err != nil {
-			panic(err)
-		}
+		var q queue.Queue
+		q = kafka.New(consulClient, "email")
+		defer q.Close()
 
-		r := kafka.NewReader(kafka.ReaderConfig{
-			Brokers: []string{fmt.Sprintf("%v:%v", kafkaAddr, kafkaPort)},
-			Topic:   "email",
-		})
-
-		defer r.Close()
 		for {
-			m, err := r.ReadMessage(context.Background())
-			if err != nil {
-				logger.Log("error", err.Error())
-				// TODO: should break or continue if cannot read msg from queue
-				break
-			}
+			b := q.Read()
 
-			if string(m.Value) == "" {
-				continue
-			}
-
-			// TODO: simplify main function
 			var req model.Request
-			if err = json.Unmarshal(m.Value, &req); err != nil {
+			if err = json.Unmarshal(b, &req); err != nil {
 				logger.Log("error", err.Error())
 				continue
 			}
