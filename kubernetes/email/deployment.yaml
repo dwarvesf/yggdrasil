@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yggdrasil-email-worker-deployment
+  labels:
+    app: yggdrasil-email-worker-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yggdrasil-email-worker-app
+  template:
+    metadata:
+      labels:
+        app: yggdrasil-email-worker-app
+    spec:
+      containers:
+      - name: yggdrasil-email-worker
+        image: hub.dwarvesf.com/yggdrasil/email:rc
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 465
+        env:
+        - name: SERVICE_ADDRESS
+          value: "yggdrasil-email-worker-service"
+        - name: PORT
+          value: "465"
+        - name: SENDGRID
+          valueFrom:
+            secretKeyRef:
+              name: yggdrasil
+              key: sendgrid
+      imagePullSecrets:
+      - name: dwarvesf

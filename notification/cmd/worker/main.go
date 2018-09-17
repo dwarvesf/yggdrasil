@@ -79,10 +79,14 @@ func main() {
 
 			switch req.Provider {
 			case "firebase":
-				projectID, projectIDErr := toolkit.GetConsulValueFromKey(consulClient, "project_id")
-				if projectIDErr != nil {
-					logger.Log("exit", err)
-					os.Exit(3)
+				projectID := os.Getenv("PROJECT_ID")
+				if projectID == "" {
+					var projectIDErr error
+					projectID, projectIDErr = toolkit.GetConsulValueFromKey(consulClient, "project_id")
+					if projectIDErr != nil {
+						logger.Log("exit", projectIDErr)
+						os.Exit(3)
+					}
 				}
 				firebaseNotifier := notification.New(ctx, os.Getenv("CREDENTIAL_FILE"), projectID)
 

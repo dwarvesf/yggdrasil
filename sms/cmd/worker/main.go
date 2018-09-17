@@ -70,15 +70,18 @@ func main() {
 				logger.Log("error", err.Error())
 				continue
 			}
-
 			if err := validator.Validate; err != nil {
 				logger.Log("error", err)
 				continue
 			}
+
 			var smsClient sms.SMS
 			switch req.Provider {
 			case "twilio":
-				v, _ := toolkit.GetConsulValueFromKey(consulClient, "twilio")
+				v := os.Getenv("TWILIO")
+				if v == "" {
+					v, _ = toolkit.GetConsulValueFromKey(consulClient, "twilio")
+				}
 				value := model.TwilioSecret{}
 				if err = json.Unmarshal([]byte(v), &value); err != nil {
 					logger.Log("error", err.Error())
@@ -86,7 +89,6 @@ func main() {
 				smsClient = twilio.New(value.AppSid, value.AuthToken)
 				smsClient.Send(value.AppNumber, req.To, req.Content, value.AppSid)
 			}
-
 		}
 	}()
 

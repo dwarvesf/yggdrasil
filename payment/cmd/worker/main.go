@@ -77,7 +77,10 @@ func main() {
 			var paymentClient payment.Payer
 			switch req.Provider {
 			case "stripe":
-				v, _ := toolkit.GetConsulValueFromKey(consulClient, "stripe")
+				v := os.Getenv("STRIPE")
+				if v == "" {
+					v, _ = toolkit.GetConsulValueFromKey(consulClient, "stripe")
+				}
 				paymentClient = stripe.New(v)
 				paymentClient.Pay(req)
 			}

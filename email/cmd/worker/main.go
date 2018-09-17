@@ -74,7 +74,10 @@ func main() {
 			var emailer email.Emailer
 			switch req.Provider {
 			case "sendgrid":
-				v, _ := toolkit.GetConsulValueFromKey(consulClient, "sendgrid")
+				v := os.Getenv("SENDGRID")
+				if v == "" {
+					v, _ = toolkit.GetConsulValueFromKey(consulClient, "sendgrid")
+				}
 				emailer = sendgrid.New(v)
 				emailer.Send()
 			}
