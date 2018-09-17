@@ -20,28 +20,22 @@ type Kafka struct {
 }
 
 // New return a new kafka queue
-func New(consulClient *consul.Client) queue.Queue {
-	k := &Kafka{
-		Consul: consulClient,
-	}
+func New(consulClient *consul.Client, topic string) queue.Queue {
+	k := &Kafka{Consul: consulClient}
 	k.address = k.getBrokers()
-	return k
-}
-
-// NewWriter return kafka reader
-func (k *Kafka) NewWriter(topic string) {
 	k.Writter = gokafka.NewWriter(gokafka.WriterConfig{
 		Brokers: k.address,
 		Topic:   topic,
 	})
+	k.Reader = gokafka.NewReader(gokafka.ReaderConfig{
+		Brokers: k.address,
+		Topic:   topic,
+	})
+	return k
 }
 
 // Write msg to kafka queue
 func (k *Kafka) Write(topic string, values [][]byte) error {
-	if k.Writter == nil {
-		k.NewWriter(topic)
-	}
-
 	var msgs []gokafka.Message
 	for _, v := range values {
 		msgs = append(msgs, gokafka.Message{
@@ -55,20 +49,8 @@ func (k *Kafka) Write(topic string, values [][]byte) error {
 	)
 }
 
-// NewReader return kafka reader
-func (k *Kafka) NewReader(topic string) {
-	k.Reader = gokafka.NewReader(gokafka.ReaderConfig{
-		Brokers: k.address,
-		Topic:   topic,
-	})
-}
-
 // Read msg from kafka queue§
 func (k *Kafka) Read(topic string) []byte {
-	if k.Reader == nil {
-		k.NewReader(topic)
-	}
-
 	var b []byte
 	for {
 		m, err := k.Reader.ReadMessage(context.Background())
@@ -88,14 +70,8 @@ func (k *Kafka) Read(topic string) []byte {
 }
 
 // Close kafka reader/writer
-func (k *Kafka) Close() error {
-	if k.Reader != nil {
-		return k.Reader.Close()
-	}
-	if k.Writter != nil {
-		return k.Writter.Close()
-	}
-	return nil
+func (k *Kafka) Close() (error, error) {
+	return k.Reader.Close(), k.Writter.Close()
 }
 
 func (k *Kafka) getBrokers() []string {
