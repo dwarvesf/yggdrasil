@@ -1,13 +1,16 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
+
+	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
+
+	"github.com/dwarvesf/yggdrasil/toolkit/queue"
 
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
@@ -55,25 +58,14 @@ func main() {
 	}()
 
 	go func() {
-		kafka := toolkit.Kafka{Consul: consulClient}
-		kafka.New("email")
-		defer kafka.Reader.Close()
+		var q queue.Queue
+		q = kafka.New(consulClient)
 
 		for {
-			m, err := kafka.Reader.ReadMessage(context.Background())
-			if err != nil {
-				logger.Log("error", err.Error())
-				// TODO: should break or continue if cannot read msg from queue
-				break
-			}
+			b := q.Read("email")
 
-			if string(m.Value) == "" {
-				continue
-			}
-
-			// TODO: simplify main function
 			var req model.Request
-			if err = json.Unmarshal(m.Value, &req); err != nil {
+			if err = json.Unmarshal(b, &req); err != nil {
 				logger.Log("error", err.Error())
 				continue
 			}
