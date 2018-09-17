@@ -28,9 +28,13 @@ func GetServiceAddress(c *consul.Client, svc string) (string, int, error) {
 
 // RegisterService register a service to consul
 func RegisterService(c *consul.Client, name string, port int) error {
+	address := os.Getenv("SERVICE_ADDRESS")
+	if address == "" {
+		os.Getenv("PRIVATE_IP")
+	}
 	return c.Agent().ServiceRegister(&consul.AgentServiceRegistration{
 		Name:    name,
 		Port:    port,
-		Address: os.Getenv("PRIVATE_IP"),
+		Address: address,
 	})
 }
