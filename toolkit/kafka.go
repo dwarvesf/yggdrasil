@@ -8,12 +8,14 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+// Kafka TODO
 type Kafka struct {
 	Consul *consul.Client
 	Writer *kafka.Writer
 	Reader *kafka.Reader
 }
 
+// New a kafka reader & write with given topic
 func (k *Kafka) New(topic string) error {
 	var kafkaInfo struct {
 		Address string `json:"address"`
