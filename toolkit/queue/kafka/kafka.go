@@ -15,6 +15,8 @@ import (
 type Kafka struct {
 	Consul  *consul.Client
 	address []string
+	Reader  *gokafka.Reader
+	Writter *gokafka.Writer
 }
 
 // New return a new kafka queue
@@ -26,33 +28,50 @@ func New(consulClient *consul.Client) queue.Queue {
 	return k
 }
 
-// Write return a new writer for kafka Queue
-func (k *Kafka) Write(topic string, value []byte) error {
-	w := gokafka.NewWriter(gokafka.WriterConfig{
+// NewWriter return kafka reader
+func (k *Kafka) NewWriter(topic string) {
+	k.Writter = gokafka.NewWriter(gokafka.WriterConfig{
 		Brokers: k.address,
 		Topic:   topic,
 	})
-	defer w.Close()
-	return w.WriteMessages(
-		context.Background(),
-		gokafka.Message{
+}
+
+// Write msg to kafka queue
+func (k *Kafka) Write(topic string, values [][]byte) error {
+	if k.Writter == nil {
+		k.NewWriter(topic)
+	}
+
+	var msgs []gokafka.Message
+	for _, v := range values {
+		msgs = append(msgs, gokafka.Message{
 			Key:   []byte(topic),
-			Value: value,
-		},
+			Value: v,
+		})
+	}
+	return k.Writter.WriteMessages(
+		context.Background(),
+		msgs...,
 	)
 }
 
-// Read return a new reader for kafka Queue
-func (k *Kafka) Read(topic string) []byte {
-	r := gokafka.NewReader(gokafka.ReaderConfig{
+// NewReader return kafka reader
+func (k *Kafka) NewReader(topic string) {
+	k.Reader = gokafka.NewReader(gokafka.ReaderConfig{
 		Brokers: k.address,
 		Topic:   topic,
 	})
-	defer r.Close()
+}
+
+// Read msg from kafka queue§
+func (k *Kafka) Read(topic string) []byte {
+	if k.Reader == nil {
+		k.NewReader(topic)
+	}
 
 	var b []byte
 	for {
-		m, err := r.ReadMessage(context.Background())
+		m, err := k.Reader.ReadMessage(context.Background())
 		if err != nil {
 			fmt.Println(fmt.Sprintf("err: %v", err))
 			break
@@ -66,6 +85,17 @@ func (k *Kafka) Read(topic string) []byte {
 		break
 	}
 	return b
+}
+
+// Close kafka reader/writer
+func (k *Kafka) Close() error {
+	if k.Reader != nil {
+		return k.Reader.Close()
+	}
+	if k.Writter != nil {
+		return k.Writter.Close()
+	}
+	return nil
 }
 
 func (k *Kafka) getBrokers() []string {

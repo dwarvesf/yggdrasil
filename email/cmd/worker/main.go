@@ -60,6 +60,7 @@ func main() {
 	go func() {
 		var q queue.Queue
 		q = kafka.New(consulClient)
+		defer q.Close()
 
 		for {
 			b := q.Read("email")
