@@ -43,26 +43,31 @@ func main() {
 		panic(err)
 	}
 
+	svcName := "sms"
 	go func() {
-		name := "sms"
 		port, err := strconv.Atoi(os.Getenv("PORT"))
 		if err != nil {
 			panic(err)
 		}
-		logger.Log("consul", "registering", "name", name)
+		logger.Log("consul", "registering", "name", svcName)
 
-		if err := toolkit.RegisterService(consulClient, name, port); err != nil {
+		if err := toolkit.RegisterService(consulClient, svcName, port); err != nil {
 			panic(err)
 		}
 	}()
 
 	go func() {
 		var q queue.Queue
-		q = kafka.New(consulClient, "sms")
-		defer q.Close()
+		q = kafka.New(consulClient)
+		r := q.NewReader(svcName)
+		defer r.Close()
 
 		for {
-			b := q.Read()
+			b, err := r.Read()
+			if err != nil {
+				logger.Log("error", err.Error())
+				continue
+			}
 
 			var req model.Request
 
