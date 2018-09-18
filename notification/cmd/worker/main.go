@@ -58,11 +58,16 @@ func main() {
 
 	go func() {
 		var q queue.Queue
-		q = kafka.New(consulClient, "notification")
-		defer q.Close()
+		q = kafka.New(consulClient)
+		r := q.NewReader("notification")
+		defer r.Close()
 
 		for {
-			b := q.Read()
+			b, err := r.Read()
+			if err != nil {
+				logger.Log("error", err.Error())
+				continue
+			}
 
 			// TODO: simplify main function
 			var req model.Request

@@ -11,78 +11,83 @@ import (
 	gokafka "github.com/segmentio/kafka-go"
 )
 
-// Kafka implementation
-type Kafka struct {
-	Consul  *consul.Client
-	address []string
-	topic   string
-	Reader  *gokafka.Reader
-	Writter *gokafka.Writer
+// Queue implementation
+type kafka struct {
+	ConsulClient *consul.Client
 }
 
-// New return a new kafka queue
-func New(consulClient *consul.Client, topic string) queue.Queue {
-	k := &Kafka{Consul: consulClient}
-	k.address = k.getBrokers()
-	k.topic = topic
-	k.Writter = gokafka.NewWriter(gokafka.WriterConfig{
-		Brokers: k.address,
-		Topic:   k.topic,
-	})
-	k.Reader = gokafka.NewReader(gokafka.ReaderConfig{
-		Brokers: k.address,
-		Topic:   k.topic,
-	})
-	return k
-}
-
-// Write msg to kafka queue
-func (k *Kafka) Write(values [][]byte) error {
-	var msgs []gokafka.Message
-	for _, v := range values {
-		msgs = append(msgs, gokafka.Message{
-			Key:   []byte(k.topic),
-			Value: v,
-		})
+// New return a new kafka
+func New(consulClient *consul.Client) queue.Queue {
+	return &kafka{
+		ConsulClient: consulClient,
 	}
-	return k.Writter.WriteMessages(
+}
+
+// Message writer implementation
+type kafkaWriter struct {
+	Writer *gokafka.Writer
+}
+
+// NewWriter return a new writer for kafka
+func (k *kafka) NewWriter(topic string) queue.Writer {
+	return &kafkaWriter{
+		Writer: gokafka.NewWriter(gokafka.WriterConfig{
+			Brokers: k.getBrokers(),
+			Topic:   topic,
+		}),
+	}
+}
+
+// Close writer
+func (w *kafkaWriter) Close() error {
+	return w.Writer.Close()
+}
+
+func (w *kafkaWriter) Write(key string, value []byte) error {
+	return w.Writer.WriteMessages(
 		context.Background(),
-		msgs...,
+		gokafka.Message{
+			Key:   []byte(key),
+			Value: value,
+		},
 	)
 }
 
-// Read msg from kafka queue§
-func (k *Kafka) Read() []byte {
-	var b []byte
-	for {
-		m, err := k.Reader.ReadMessage(context.Background())
-		if err != nil {
-			fmt.Println(fmt.Sprintf("err: %v", err))
-			break
-		}
+// Message reader implementation
+type kafkaReader struct {
+	Reader *gokafka.Reader
+}
 
-		if string(m.Value) == "" {
-			continue
-		}
-
-		b = m.Value
-		break
+// NewReader return a new reader for kafka service
+func (k *kafka) NewReader(topic string) queue.Reader {
+	return &kafkaReader{
+		Reader: gokafka.NewReader(gokafka.ReaderConfig{
+			Brokers: k.getBrokers(),
+			Topic:   topic,
+		}),
 	}
-	return b
 }
 
-// Close kafka reader/writer
-func (k *Kafka) Close() (error, error) {
-	return k.Reader.Close(), k.Writter.Close()
+// Close reader
+func (r *kafkaReader) Close() error {
+	return r.Reader.Close()
 }
 
-func (k *Kafka) getBrokers() []string {
+func (r *kafkaReader) Read() ([]byte, error) {
+	message, err := r.Reader.ReadMessage(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return message.Value, nil
+}
+
+func (k *kafka) getBrokers() []string {
 	var kafkaInfo struct {
 		Address string `json:"address"`
 		Port    int    `json:"port"`
 	}
 
-	v, _ := toolkit.GetConsulValueFromKey(k.Consul, "kafka")
+	v, _ := toolkit.GetConsulValueFromKey(k.ConsulClient, "kafka")
 	if err := json.Unmarshal([]byte(v), &kafkaInfo); err != nil {
 		return []string{}
 	}
