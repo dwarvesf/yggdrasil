@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: yggdrasil-payment-worker-service
+spec:
+  selector:
+    app: yggdrasil-payment-worker-app
+  ports:
+    - name: http
+      protocol: TCP
+      port: 3000

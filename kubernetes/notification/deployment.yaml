@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yggdrasil-notification-worker-deployment
+  labels:
+    app: yggdrasil-notification-worker-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yggdrasil-notification-worker-app
+  template:
+    metadata:
+      labels:
+        app: yggdrasil-notification-worker-app
+    spec:
+      containers:
+      - name: yggdrasil-notification-worker
+        image: hub.dwarvesf.com/yggdrasil/notification:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 65535
+        env:
+        - name: SERVICE_ADDRESS
+          value: "yggdrasil-notification-worker-service"
+        - name: PORT
+          value: "65535"
+        - name: PROJECT_ID
+          valueFrom:
+            secretKeyRef:
+              name: yggdrasil
+              key: project_id
+      imagePullSecrets:
+      - name: dwarvesf
