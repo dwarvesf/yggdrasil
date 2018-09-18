@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/dwarvesf/yggdrasil/scheduler/model"
-	"github.com/dwarvesf/yggdrasil/scheduler/service/message"
+	"github.com/dwarvesf/yggdrasil/toolkit/queue"
 )
 
 // MockPayload to mock payload data
@@ -51,14 +51,14 @@ type Output struct {
 	Data  []byte
 }
 
-// MockMessageService to mock message Service
-type MockMessageService struct {
+// MockQueueService to mock queue Service
+type MockQueueService struct {
 	ReadData  chan []byte
 	WriteData chan Output
 }
 
 // NewWriter is mock implementation
-func (s *MockMessageService) NewWriter(topic string) message.Writer {
+func (s *MockQueueService) NewWriter(topic string) queue.Writer {
 	return &mockWriter{
 		Service: s,
 		Topic:   topic,
@@ -66,14 +66,15 @@ func (s *MockMessageService) NewWriter(topic string) message.Writer {
 }
 
 // NewReader is mock implementation
-func (s *MockMessageService) NewReader() message.Reader {
+func (s *MockQueueService) NewReader(topic string) queue.Reader {
 	return &mockReader{
 		Service: s,
+		Topic:   topic,
 	}
 }
 
 type mockWriter struct {
-	Service *MockMessageService
+	Service *MockQueueService
 	Topic   string
 }
 
@@ -81,17 +82,18 @@ func (w *mockWriter) Close() error {
 	return nil
 }
 
-func (w *mockWriter) WriteMessage(data []byte) error {
+func (w *mockWriter) Write(key string, data []byte) error {
 	w.Service.WriteData <- Output{Data: data, Topic: w.Topic}
 
 	return nil
 }
 
 type mockReader struct {
-	Service *MockMessageService
+	Service *MockQueueService
+	Topic   string
 }
 
-func (r *mockReader) ReadMessage() ([]byte, error) {
+func (r *mockReader) Read() ([]byte, error) {
 	return <-r.Service.ReadData, nil
 }
 
