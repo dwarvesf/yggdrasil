@@ -52,8 +52,10 @@ func (s *schedulerImpl) HandleRequests(d time.Duration) {
 				continue
 			}
 
-			s.Logger.Log("sending", r.Service, r.Payload, r.Timestamp)
-			err = s.sendRequest(r)
+			r.Retry.CurrenyRetry++
+
+			s.logRequest("sending", r)
+			err = s.sendResponse(r)
 			if err != nil {
 				s.Logger.Log("error", err)
 				continue
@@ -65,16 +67,26 @@ func (s *schedulerImpl) HandleRequests(d time.Duration) {
 	}
 }
 
-func (s *schedulerImpl) sendRequest(r model.Request) error {
+func (s *schedulerImpl) logRequest(name string, r model.Request) {
+	s.Logger.Log(name, r.Service, "time", r.Timestamp)
+	s.Logger.Log("retry", r.Retry.CurrenyRetry, "maxRetry", r.Retry.MaxRetry, "retryAfter", r.Retry.RetryAfter)
+}
+
+func (s *schedulerImpl) sendResponse(r model.Request) error {
 	w := s.Service.QueueService.NewWriter(r.Service)
 	defer w.Close()
 
-	payload, err := json.Marshal(r.Payload)
+	response := model.Response{
+		Payload: r.Payload,
+		Retry:   r.Retry,
+	}
+
+	resp, err := json.Marshal(response)
 	if err != nil {
 		return err
 	}
 
-	err = w.Write("scheduler", payload)
+	err = w.Write("scheduler", resp)
 	if err != nil {
 		return err
 	}
@@ -113,7 +125,7 @@ func (s *schedulerImpl) ListenMessages() {
 			continue
 		}
 
-		s.Logger.Log("saving", req.Service, req.Payload, req.Timestamp)
+		s.logRequest("saving", req)
 		err = s.saveRequest(req)
 		if err != nil {
 			s.Logger.Log("error", err.Error())
@@ -135,10 +147,16 @@ func (s *schedulerImpl) saveRequest(r model.Request) error {
 		return err
 	}
 
+	retry, err := json.Marshal(r.Retry)
+	if err != nil {
+		return err
+	}
+
 	entity := model.RequestEntity{
 		Service:   r.Service,
 		Payload:   string(payload),
 		Timestamp: r.Timestamp,
+		Retry:     string(retry),
 	}
 
 	return s.Service.RequestService.SaveRequest(entity)
