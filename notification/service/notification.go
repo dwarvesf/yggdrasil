@@ -2,11 +2,10 @@ package notification
 
 import (
 	"context"
-	"log"
-	"os"
 
 	"firebase.google.com/go"
 	"firebase.google.com/go/messaging"
+	"golang.org/x/oauth2/google"
 	"google.golang.org/api/option"
 )
 
@@ -33,22 +32,20 @@ func (noti *FirebaseNotifier) Send(ctx context.Context, deviceToken, body, title
 }
 
 //New new one notifier instance
-func New(ctx context.Context, credentialFileName string, projectID string) *FirebaseNotifier {
-	opt := option.WithCredentialsFile(credentialFileName)
-	config := &firebase.Config{
-		ProjectID: projectID,
-	}
-
-	app, err := firebase.NewApp(ctx, config, opt)
+func New(ctx context.Context, credentialConfig []byte) *FirebaseNotifier {
+	creds, err := google.CredentialsFromJSON(ctx, credentialConfig, "https://www.googleapis.com/auth/cloud-platform")
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		panic(err)
 	}
 
-	client, createClientError := app.Messaging(ctx)
-	if createClientError != nil {
-		log.Fatal(createClientError)
-		os.Exit(2)
+	app, err := firebase.NewApp(ctx, nil, option.WithCredentials(creds))
+	if err != nil {
+		panic(err)
+	}
+
+	client, err := app.Messaging(ctx)
+	if err != nil {
+		panic(err)
 	}
 
 	return &FirebaseNotifier{client}
