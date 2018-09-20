@@ -10,12 +10,7 @@ import (
 )
 
 // Request is a struct define request message taken from queue
-type Request struct {
-	Service   string                 `json:"service"`
-	Payload   map[string]interface{} `json:"payload"`
-	Timestamp time.Time              `json:"timestamp"`
-	Retry     toolkit.RetryMetadata  `json:"retry"`
-}
+type Request = toolkit.SchedulerRequest
 
 // Response is a struct define message scheduler send to message queue
 type Response struct {

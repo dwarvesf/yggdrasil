@@ -4,8 +4,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/dwarvesf/yggdrasil/toolkit"
-
 	"github.com/dwarvesf/yggdrasil/scheduler/model"
 )
 
@@ -26,7 +24,7 @@ func ValidateRequest(r model.Request) error {
 		return ErrRequestExpired
 	}
 
-	if !isRetryValid(r.Retry) {
+	if !r.Retry.IsValidRetry() {
 		return ErrInvalidRetry
 	}
 
@@ -49,8 +47,4 @@ func isValidService(service string) bool {
 
 func isRequestTimeExpired(t time.Time) bool {
 	return t.Unix() < time.Now().Unix()
-}
-
-func isRetryValid(r toolkit.RetryMetadata) bool {
-	return r.RetryAfter > 0 && r.CurrenyRetry > 0 && r.MaxRetry >= r.CurrenyRetry
 }

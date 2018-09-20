@@ -2,15 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
-
-	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
-
-	"github.com/dwarvesf/yggdrasil/toolkit/queue"
 
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
@@ -19,6 +16,8 @@ import (
 	email "github.com/dwarvesf/yggdrasil/email/service"
 	"github.com/dwarvesf/yggdrasil/email/service/sendgrid"
 	"github.com/dwarvesf/yggdrasil/toolkit"
+	"github.com/dwarvesf/yggdrasil/toolkit/queue"
+	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
 )
 
 func main() {
@@ -61,7 +60,9 @@ func main() {
 		var q queue.Queue
 		q = kafka.New(consulClient)
 		r := q.NewReader(svcName)
+		w := q.NewWriter("scheduler")
 		defer r.Close()
+		defer w.Close()
 
 		for {
 			b, err := r.Read()
@@ -76,18 +77,36 @@ func main() {
 				continue
 			}
 
-			var emailer email.Emailer
-			switch req.Provider {
-			case "sendgrid":
-				v := os.Getenv("SENDGRID")
-				if v == "" {
-					v, _ = toolkit.GetConsulValueFromKey(consulClient, "sendgrid")
+			if err := sendEmail(req, consulClient); err != nil {
+				logger.Log("error", err.Error())
+
+				message, err := toolkit.CreateRetryMessage("email", req.Payload, req.Retry)
+				if err != nil {
+					logger.Log("error", err.Error())
+					continue
 				}
-				emailer = sendgrid.New(v)
-				emailer.Send()
+
+				w.Write("email", message)
+				logger.Log("info", "retry sent")
 			}
 		}
 	}()
 
 	logger.Log("exit", <-errs)
+}
+
+func sendEmail(r model.Request, consulClient *consul.Client) error {
+	var emailer email.Emailer
+
+	switch r.Payload.Provider {
+	case "sendgrid":
+		v := os.Getenv("SENDGRID")
+		if v == "" {
+			v, _ = toolkit.GetConsulValueFromKey(consulClient, "sendgrid")
+		}
+		emailer = sendgrid.New(v)
+		return emailer.Send()
+	default:
+		return errors.New("INVALID_PROVIDER")
+	}
 }
