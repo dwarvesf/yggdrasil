@@ -34,13 +34,11 @@ func (noti *FirebaseNotifier) Send(ctx context.Context, deviceToken, body, title
 //New new one notifier instance
 func New(ctx context.Context, credentialConfig []byte) *FirebaseNotifier {
 	creds, err := google.CredentialsFromJSON(ctx, credentialConfig, "https://www.googleapis.com/auth/cloud-platform")
-
 	if err != nil {
 		panic(err)
 	}
 
 	app, err := firebase.NewApp(ctx, nil, option.WithCredentials(creds))
-
 	if err != nil {
 		panic(err)
 	}
