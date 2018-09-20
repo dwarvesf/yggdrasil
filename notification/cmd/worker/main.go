@@ -84,16 +84,11 @@ func main() {
 
 			switch req.Provider {
 			case "firebase":
-				projectID := os.Getenv("PROJECT_ID")
-				if projectID == "" {
-					var projectIDErr error
-					projectID, projectIDErr = toolkit.GetConsulValueFromKey(consulClient, "project_id")
-					if projectIDErr != nil {
-						logger.Log("exit", projectIDErr)
-						os.Exit(3)
-					}
+				fcmCredentials, projectIDErr := toolkit.GetConsulValueFromKey(consulClient, "fcm_credentials")
+				if projectIDErr != nil {
+					panic(projectIDErr)
 				}
-				firebaseNotifier := notification.New(ctx, os.Getenv("CREDENTIAL_FILE"), projectID)
+				firebaseNotifier := notification.New(ctx, []byte(fcmCredentials))
 
 				res, sendErr := firebaseNotifier.Send(ctx, req.DeviceToken, req.Body, req.Title)
 				if sendErr != nil {
