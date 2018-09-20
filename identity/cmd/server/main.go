@@ -12,12 +12,14 @@ import (
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 
+	cfg "github.com/dwarvesf/yggdrasil/identity/cmd/config"
 	"github.com/dwarvesf/yggdrasil/identity/db"
 	"github.com/dwarvesf/yggdrasil/identity/endpoints"
 	serviceHttp "github.com/dwarvesf/yggdrasil/identity/http"
 	"github.com/dwarvesf/yggdrasil/identity/middlewares"
 	"github.com/dwarvesf/yggdrasil/identity/service"
 	"github.com/dwarvesf/yggdrasil/identity/service/user"
+	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
 func main() {
@@ -34,11 +36,18 @@ func main() {
 	}
 
 	consulClient, err := consul.NewClient(&consul.Config{
-		Address: fmt.Sprintf("consul-server:8500"),
+		Address: fmt.Sprintf("consul:8500"),
 	})
 	if err != nil {
 		panic(err)
 	}
+
+	// Get jwt secret
+	secretKey, secretKeyErr := toolkit.GetConsulValueFromKey(consulClient, "jwt_secret")
+	if secretKeyErr != nil {
+		panic(secretKeyErr)
+	}
+	cfg.JwtSecret = secretKey
 
 	// FIXME: replace this with `postgres.New()`
 	pgdb, closeDB := db.New(consulClient)
@@ -50,6 +59,7 @@ func main() {
 		s = service.Service{
 			UserService: middlewares.Compose(
 				user.NewPGService(pgdb),
+				user.ValidationMiddleware(),
 			).(user.Service),
 		}
 	}

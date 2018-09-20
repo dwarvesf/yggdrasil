@@ -26,6 +26,14 @@
 
 
 [[constraint]]
+  name = "firebase.google.com/go"
+  version = "3.4.0"
+
+[[constraint]]
+  name = "github.com/dgrijalva/jwt-go"
+  version = "3.2.0"
+
+[[constraint]]
   name = "github.com/go-chi/chi"
   version = "3.3.3"
 
@@ -38,25 +46,49 @@
   version = "0.7.0"
 
 [[constraint]]
+  name = "github.com/hashicorp/consul"
+  version = "1.2.3"
+
+[[constraint]]
   name = "github.com/jinzhu/gorm"
   version = "1.9.1"
 
-[prune]
-  go-tests = true
-  unused-packages = true
+[[constraint]]
+  name = "github.com/k0kubun/pp"
+  version = "2.3.0"
 
 [[constraint]]
-  name = "github.com/hashicorp/consul"
-  version = "1.2.2"
+  name = "github.com/satori/go.uuid"
+  version = "1.2.0"
+
+[[constraint]]
+  name = "github.com/segmentio/kafka-go"
+  version = "0.1.0"
 
 [[constraint]]
   name = "github.com/sendgrid/sendgrid-go"
   version = "3.4.1"
 
 [[constraint]]
-  branch = "v2"
-  name = "gopkg.in/validator.v2"
+  branch = "master"
+  name = "github.com/sfreiberg/gotwilio"
+
+[[constraint]]
+  name = "github.com/stripe/stripe-go"
+  version = "49.1.0"
 
 [[constraint]]
   branch = "master"
-  name = "github.com/segmentio/kafka-go"
+  name = "golang.org/x/crypto"
+
+[[constraint]]
+  branch = "master"
+  name = "google.golang.org/api"
+
+[[constraint]]
+  branch = "v2"
+  name = "gopkg.in/validator.v2"
+
+[prune]
+  go-tests = true
+  unused-packages = true

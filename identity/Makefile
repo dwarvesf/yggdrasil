@@ -8,3 +8,6 @@ build:
 
 dev: build
 	./server; rm server
+
+up: build
+	PORT=1942 ./server; rm server

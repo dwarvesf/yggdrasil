@@ -31,6 +31,8 @@ func NewHTTPHandler(s service.Service, endpoints endpoints.Endpoints, logger log
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 
+	//TODO: Add authorization for all endpoints
+
 	// endpoints
 	r.Route("/users", func(r chi.Router) {
 		r.Get("/{id}", httptransport.NewServer(
@@ -40,6 +42,34 @@ func NewHTTPHandler(s service.Service, endpoints endpoints.Endpoints, logger log
 			options...,
 		).ServeHTTP)
 	})
+
+	r.Post("/register", httptransport.NewServer(
+		endpoints.Register,
+		DecodeCreateUserRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP)
+
+	r.Put("/user_verify", httptransport.NewServer(
+		endpoints.VerifyUser,
+		DecodeVerifyUserRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP)
+
+	r.Post("/authenticate", httptransport.NewServer(
+		endpoints.VerifyToken,
+		DecodeVerifyTokenRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP)
+
+	r.Post("/login", httptransport.NewServer(
+		endpoints.Login,
+		DecodeLoginRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP)
 
 	return r
 }
