@@ -84,15 +84,15 @@ func main() {
 
 			switch req.Provider {
 			case "firebase":
-				fcmCredentials, projectIDErr := toolkit.GetConsulValueFromKey(consulClient, "fcm_credentials")
-				if projectIDErr != nil {
-					panic(projectIDErr)
+				fcmCredentials, err := toolkit.GetConsulValueFromKey(consulClient, "fcm_credentials")
+				if err != nil {
+					panic(err)
 				}
 				firebaseNotifier := notification.New(ctx, []byte(fcmCredentials))
 
-				res, sendErr := firebaseNotifier.Send(ctx, req.DeviceToken, req.Body, req.Title)
-				if sendErr != nil {
-					logger.Log(sendErr)
+				res, err := firebaseNotifier.Send(ctx, req.DeviceToken, req.Body, req.Title)
+				if err != nil {
+					logger.Log(err)
 					continue
 				}
 				logger.Log(res)

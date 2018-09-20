@@ -43,9 +43,9 @@ func New(ctx context.Context, credentialConfig []byte) *FirebaseNotifier {
 		panic(err)
 	}
 
-	client, createClientError := app.Messaging(ctx)
-	if createClientError != nil {
-		panic(createClientError)
+	client, err := app.Messaging(ctx)
+	if err != nil {
+		panic(err)
 	}
 
 	return &FirebaseNotifier{client}
