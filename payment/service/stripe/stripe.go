@@ -18,18 +18,18 @@ func New(apiKey string) *Client {
 }
 
 // Pay implement Pay function in Payer interface
-func (sc Client) Pay(request model.Request) error {
+func (sc Client) Pay(p model.Payload) error {
 	customerParams := &stripe.CustomerParams{}
-	customerParams.SetSource(request.Token)
+	customerParams.SetSource(p.Token)
 	newCustomer, err := customer.New(customerParams)
 	if err != nil {
 		return err
 	}
 
 	chargeParams := &stripe.ChargeParams{
-		Amount:      stripe.Int64(request.Amount),
-		Currency:    stripe.String(string(request.Currency)),
-		Description: stripe.String(request.Desc),
+		Amount:      stripe.Int64(p.Amount),
+		Currency:    stripe.String(string(p.Currency)),
+		Description: stripe.String(p.Desc),
 		Customer:    stripe.String(newCustomer.ID),
 	}
 

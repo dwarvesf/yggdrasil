@@ -1,9 +1,19 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/dwarvesf/yggdrasil/toolkit"
+)
 
 // Request is a struct define request message taken from queue
 type Request struct {
+	Payload Payload               `json:"payload"`
+	Retry   toolkit.RetryMetadata `json:"retry"`
+}
+
+// Payload is the content of request
+type Payload struct {
 	Currency   string     `json:"currency,omitempty"`
 	Desc       string     `json:"desc,omitempty"`
 	Provider   string     `json:"provider,omitempty"`

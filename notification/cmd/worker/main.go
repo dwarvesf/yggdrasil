@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -60,7 +61,9 @@ func main() {
 		var q queue.Queue
 		q = kafka.New(consulClient)
 		r := q.NewReader(svcName)
+		w := q.NewWriter("scheduler")
 		defer r.Close()
+		defer w.Close()
 
 		for {
 			b, err := r.Read()
@@ -69,7 +72,6 @@ func main() {
 				continue
 			}
 
-			// TODO: simplify main function
 			var req model.Request
 			if err = json.Unmarshal(b, &req); err != nil {
 				logger.Log("error", err.Error())
@@ -80,29 +82,40 @@ func main() {
 				continue
 			}
 
-			ctx := context.Background()
+			res, err := sendNotification(req.Payload, consulClient)
+			if err != nil {
+				logger.Log("error", err.Error())
 
-			switch req.Provider {
-			case "firebase":
-				fcmCredentials, err := toolkit.GetConsulValueFromKey(consulClient, "fcm_credentials")
+				message, err := toolkit.CreateRetryMessage("notification", req.Payload, req.Retry)
 				if err != nil {
-					panic(err)
-				}
-				firebaseNotifier := notification.New(ctx, []byte(fcmCredentials))
-
-				res, err := firebaseNotifier.Send(ctx, req.DeviceToken, req.Body, req.Title)
-				if err != nil {
-					logger.Log(err)
+					logger.Log("error", err.Error())
 					continue
 				}
-				logger.Log(res)
 
-				//Case use different notification provider, must send notify depend on req.DeviceType
-			default:
-				logger.Log("Provider not support")
+				w.Write("notification", message)
+				logger.Log("info", "retry sent")
+			} else {
+				logger.Log("res", res)
 			}
 		}
 	}()
 
 	logger.Log("exit", <-errs)
+}
+
+func sendNotification(p model.Payload, consulClient *consul.Client) (string, error) {
+	ctx := context.Background()
+
+	switch p.Provider {
+	case "firebase":
+		fcmCredentials, err := toolkit.GetConsulValueFromKey(consulClient, "fcm_credentials")
+		if err != nil {
+			return "", err
+		}
+
+		firebaseNotifier := notification.New(ctx, []byte(fcmCredentials))
+		return firebaseNotifier.Send(ctx, p.DeviceToken, p.Body, p.Title)
+	default:
+		return "", errors.New("INVALID_PROVIDER")
+	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -60,7 +61,9 @@ func main() {
 		var q queue.Queue
 		q = kafka.New(consulClient)
 		r := q.NewReader(svcName)
+		w := q.NewWriter("scheduler")
 		defer r.Close()
+		defer w.Close()
 
 		for {
 			b, err := r.Read()
@@ -79,23 +82,42 @@ func main() {
 				logger.Log("error", err)
 				continue
 			}
+			if err := sendSms(req.Payload, consulClient); err != nil {
+				logger.Log("error", err.Error())
 
-			var smsClient sms.SMS
-			switch req.Provider {
-			case "twilio":
-				v := os.Getenv("TWILIO")
-				if v == "" {
-					v, _ = toolkit.GetConsulValueFromKey(consulClient, "twilio")
-				}
-				value := model.TwilioSecret{}
-				if err = json.Unmarshal([]byte(v), &value); err != nil {
+				message, err := toolkit.CreateRetryMessage("sms", req.Payload, req.Retry)
+				if err != nil {
 					logger.Log("error", err.Error())
+					continue
 				}
-				smsClient = twilio.New(value.AppSid, value.AuthToken)
-				smsClient.Send(value.AppNumber, req.To, req.Content, value.AppSid)
+
+				w.Write("sms", message)
+				logger.Log("info", "retry sent")
 			}
 		}
 	}()
 
 	logger.Log("exit", <-errs)
+}
+
+func sendSms(p model.Payload, consulClient *consul.Client) error {
+	var smsClient sms.SMS
+
+	switch p.Provider {
+	case "twilio":
+		v := os.Getenv("TWILIO")
+		if v == "" {
+			v, _ = toolkit.GetConsulValueFromKey(consulClient, "twilio")
+		}
+
+		value := model.TwilioSecret{}
+		if err := json.Unmarshal([]byte(v), &value); err != nil {
+			return err
+		}
+
+		smsClient = twilio.New(value.AppSid, value.AuthToken)
+		return smsClient.Send(value.AppNumber, p.To, p.Content, value.AppSid)
+	default:
+		return errors.New("INVALID_PROVIDER")
+	}
 }

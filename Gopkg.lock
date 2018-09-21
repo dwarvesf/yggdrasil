@@ -62,6 +62,14 @@
   version = "v3.2.0"
 
 [[projects]]
+  digest = "1:ca82a3b99694824c627573c2a76d0e49719b4a9c02d1d85a2ac91f1c1f52ab9b"
+  name = "github.com/fatih/structs"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a720dfa8df582c51dee1b36feabb906bde1588bd"
+  version = "v1.0"
+
+[[projects]]
   digest = "1:b9914f85d95a0968bafd1be1908ba29e2eafafd88d6fd13696be42bf5368c380"
   name = "github.com/go-chi/chi"
   packages = ["."]
@@ -507,6 +515,7 @@
     "firebase.google.com/go",
     "firebase.google.com/go/messaging",
     "github.com/dgrijalva/jwt-go",
+    "github.com/fatih/structs",
     "github.com/go-chi/chi",
     "github.com/go-chi/cors",
     "github.com/go-kit/kit/endpoint",

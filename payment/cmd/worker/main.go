@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -60,7 +61,9 @@ func main() {
 		var q queue.Queue
 		q = kafka.New(consulClient)
 		r := q.NewReader(svcName)
+		w := q.NewWriter("scheduler")
 		defer r.Close()
+		defer w.Close()
 
 		for {
 			b, err := r.Read()
@@ -69,7 +72,6 @@ func main() {
 				continue
 			}
 
-			// TODO: simplify main function
 			var req model.Request
 			if err = json.Unmarshal(b, &req); err != nil {
 				logger.Log("error", err.Error())
@@ -80,18 +82,36 @@ func main() {
 				continue
 			}
 
-			var paymentClient payment.Payer
-			switch req.Provider {
-			case "stripe":
-				v := os.Getenv("STRIPE")
-				if v == "" {
-					v, _ = toolkit.GetConsulValueFromKey(consulClient, "stripe")
+			if err := sendPayment(req.Payload, consulClient); err != nil {
+				logger.Log("error", err.Error())
+
+				message, err := toolkit.CreateRetryMessage("payment", req.Payload, req.Retry)
+				if err != nil {
+					logger.Log("error", err.Error())
+					continue
 				}
-				paymentClient = stripe.New(v)
-				paymentClient.Pay(req)
+
+				w.Write("payment", message)
+				logger.Log("info", "retry sent")
 			}
 		}
 	}()
 
 	logger.Log("exit", <-errs)
+}
+
+func sendPayment(p model.Payload, consulClient *consul.Client) error {
+	var paymentClient payment.Payer
+	switch p.Provider {
+	case "stripe":
+		v := os.Getenv("STRIPE")
+		if v == "" {
+			v, _ = toolkit.GetConsulValueFromKey(consulClient, "stripe")
+		}
+
+		paymentClient = stripe.New(v)
+		return paymentClient.Pay(p)
+	default:
+		return errors.New("INVALID_PROVIDER")
+	}
 }

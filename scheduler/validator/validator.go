@@ -11,6 +11,7 @@ import (
 var (
 	ErrInvalidService = errors.New("INVALID_SERVICE")
 	ErrRequestExpired = errors.New("REQUEST_EXPRIED")
+	ErrInvalidRetry   = errors.New("INVALID_RETRY")
 )
 
 // ValidateRequest use to validate if a request is valid
@@ -21,6 +22,10 @@ func ValidateRequest(r model.Request) error {
 
 	if isRequestTimeExpired(r.Timestamp) {
 		return ErrRequestExpired
+	}
+
+	if !r.Retry.IsValidRetry() {
+		return ErrInvalidRetry
 	}
 
 	return nil
