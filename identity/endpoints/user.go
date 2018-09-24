@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/k0kubun/pp"
 
 	"github.com/dwarvesf/yggdrasil/identity/model"
 	"github.com/dwarvesf/yggdrasil/identity/service"
@@ -22,7 +21,6 @@ type GetUserRequest struct {
 // MakeGetUserEndpoint ...
 func MakeGetUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		pp.Println(request.(GetUserRequest))
 		return s.UserService.Get(&user.UserQuery{ID: request.(GetUserRequest).ID})
 	}
 }

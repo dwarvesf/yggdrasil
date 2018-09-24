@@ -1,7 +1,7 @@
 SRCPATH=$(GOPATH)/src/github.com/dwarvesf/yggdrasil
 POSTGRES_CONTAINER=postgres
 
-.PHONY: init up-identity up-email up-sms up
+.PHONY: init up-email up-sms up-payment up-identity up-scheduler up-notification up-identity up-organization up
 
 ## SETUP INFRAS
 remove-infras:
@@ -29,6 +29,11 @@ up-payment:
 	docker rm -f payment | true && \
 	docker-compose up -d --build --force-recreate; rm worker
 
+up-organization: up-identity
+	cd $(SRCPATH)/organization && make build-alpine && \
+	docker rm -f organization | true && \
+	docker-compose up -d --build --force-recreate; rm server
+
 up-identity:
 	cd $(SRCPATH)/identity && make build-alpine && \
 	docker rm -f identity | true && \
@@ -44,7 +49,7 @@ up-notification:
 	docker rm -f notification | true && \
 	docker-compose up -d --build --force-recreate; rm worker
 
-up: up-email up-sms up-scheduler up-identity up-payment up-notification
+up: up-email up-sms up-payment up-notification up-scheduler up-identity up-organization
 
 # Test for email and identity
 test-email:
@@ -66,4 +71,4 @@ test-scheduler:
 	go test ./scheduler/...
 
 # Test for all project
-test: test-email test-identity test-notification test-sms test-scheduler
+test: test-email test-notification test-sms test-scheduler test-identity

@@ -12,13 +12,13 @@ import (
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 
-	cfg "github.com/dwarvesf/yggdrasil/identity/cmd/config"
-	"github.com/dwarvesf/yggdrasil/identity/db"
-	"github.com/dwarvesf/yggdrasil/identity/endpoints"
-	serviceHttp "github.com/dwarvesf/yggdrasil/identity/http"
-	"github.com/dwarvesf/yggdrasil/identity/middlewares"
-	"github.com/dwarvesf/yggdrasil/identity/service"
-	"github.com/dwarvesf/yggdrasil/identity/service/user"
+	cfg "github.com/dwarvesf/yggdrasil/organization/cmd/config"
+	"github.com/dwarvesf/yggdrasil/organization/db"
+	"github.com/dwarvesf/yggdrasil/organization/endpoints"
+	serviceHttp "github.com/dwarvesf/yggdrasil/organization/http"
+	"github.com/dwarvesf/yggdrasil/organization/middlewares"
+	"github.com/dwarvesf/yggdrasil/organization/service"
+	"github.com/dwarvesf/yggdrasil/organization/service/organization"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
@@ -49,7 +49,6 @@ func main() {
 	}
 	cfg.JwtSecret = secretKey
 
-	// FIXME: replace this with `postgres.New()`
 	pgdb, closeDB := db.New(consulClient)
 	db.Migrate(pgdb)
 	defer closeDB()
@@ -57,10 +56,10 @@ func main() {
 	var s service.Service
 	{
 		s = service.Service{
-			UserService: middlewares.Compose(
-				user.NewPGService(pgdb),
-				user.ValidationMiddleware(),
-			).(user.Service),
+			OrganizationService: middlewares.Compose(
+				organization.NewPGService(pgdb),
+				organization.ValidationMiddleware(),
+			).(organization.Service),
 		}
 	}
 
@@ -89,7 +88,7 @@ func main() {
 
 		agent := consulClient.Agent()
 
-		name := "identity"
+		name := "organization"
 		if err := agent.ServiceRegister(&consul.AgentServiceRegistration{
 			Name:    name,
 			Port:    port,
