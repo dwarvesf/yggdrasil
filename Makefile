@@ -56,7 +56,7 @@ test-email:
 	go test ./email/cmd/worker
 
 test-identity:
-	go test ./identity/cmd/server
+	go test ./identity/...
 
 test-notification:
 	go test ./notification/cmd/worker
