@@ -11,3 +11,6 @@ dev: build
 
 up: build
 	PORT=1492 ./server; rm server
+
+test:
+	go test ./...
