@@ -32,7 +32,7 @@ func New(c *consul.Client) (*gorm.DB, func()) {
 		panic(err)
 	}
 
-	v, err := toolkit.GetConsulValueFromKey(c, "db-identity")
+	v, err := toolkit.GetConsulValueFromKey(c, "db-organization")
 	if err != nil {
 		panic(err)
 	}

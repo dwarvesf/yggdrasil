@@ -31,6 +31,12 @@ curl -X PUT --url $PRIVATE_IP:8500/v1/kv/db-identity \
     "password": "123",
     "db": "identity"
 }'
+curl -X PUT --url $PRIVATE_IP:8500/v1/kv/db-organization \
+    -d '{
+    "user": "admin",
+    "password": "123",
+    "db": "organization"
+}'
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/kafka \
     -d '{
     "address": "10.5.0.6",
