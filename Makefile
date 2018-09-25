@@ -71,4 +71,5 @@ test-scheduler:
 	go test ./scheduler/...
 
 # Test for all project
-test: test-email test-notification test-sms test-scheduler test-identity
+test:
+	go test ./...

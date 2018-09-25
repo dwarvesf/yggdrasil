@@ -86,6 +86,20 @@ services:
       service-mesh:
         ipv4_address: 10.5.0.90
 
+  postgres-test:
+    image: postgres:9.6
+    restart: always
+    environment:
+      POSTGRES_DB: test
+      POSTGRES_PASSWORD: 123
+    expose:
+      - "5432"
+    ports:
+      - "5439:5432"
+    networks:
+      service-mesh:
+        ipv4_address: 10.5.0.100
+
 networks:
   service-mesh:
     name: service-mesh-nw
