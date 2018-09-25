@@ -12,14 +12,12 @@ import (
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 
-	cfg "github.com/dwarvesf/yggdrasil/organization/cmd/config"
 	"github.com/dwarvesf/yggdrasil/organization/db"
 	"github.com/dwarvesf/yggdrasil/organization/endpoints"
 	serviceHttp "github.com/dwarvesf/yggdrasil/organization/http"
 	"github.com/dwarvesf/yggdrasil/organization/middlewares"
 	"github.com/dwarvesf/yggdrasil/organization/service"
 	"github.com/dwarvesf/yggdrasil/organization/service/organization"
-	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
 func main() {
@@ -41,13 +39,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	// Get jwt secret
-	secretKey, secretKeyErr := toolkit.GetConsulValueFromKey(consulClient, "jwt_secret")
-	if secretKeyErr != nil {
-		panic(secretKeyErr)
-	}
-	cfg.JwtSecret = secretKey
 
 	pgdb, closeDB := db.New(consulClient)
 	db.Migrate(pgdb)
