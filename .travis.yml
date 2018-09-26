@@ -43,3 +43,6 @@ jobs:
     - stage: payment
       script: make test-payment
       if: branch =~ /^feature\/payment(\/.*$|)/
+    - stage: organization
+      script: make test-organization
+      if: branch =~ /^feature\/organization(\/.*$|)/
