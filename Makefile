@@ -56,7 +56,7 @@ test-email:
 	go test ./email/cmd/worker
 
 test-identity:
-	go test ./identity/cmd/server
+	go test ./identity/...
 
 test-notification:
 	go test ./notification/cmd/worker
@@ -71,4 +71,5 @@ test-scheduler:
 	go test ./scheduler/...
 
 # Test for all project
-test: test-email test-notification test-sms test-scheduler test-identity
+test:
+	go test ./...

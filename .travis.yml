@@ -6,11 +6,15 @@ git:
   depth: 1
 
 services:
-  - postgresql
+  - docker
 
 before_script:
-  - psql -c 'create database yggdrasil_test;' -U postgres
-  - cp config/database.yml.travis config/database.yml
+  - docker run -d --name pg_test -p 5439:5432 --env POSTGRES_PASSWORD=123 --env
+    POSTGRES_DB=test --env POSTGRES_USER=postgres postgres:9.6 
+  - |
+    while ! docker exec pg_test pg_isready -h localhost -p 5432 > /dev/null; do\
+      sleep 1; \
+    done
 
 env:
   global:
