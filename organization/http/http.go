@@ -55,6 +55,12 @@ func configHandler(s service.Service, endpoints endpoints.Endpoints, logger log.
 			encodeResponse,
 			options...,
 		).ServeHTTP)
+		r.Put("/", httptransport.NewServer(
+			endpoints.UpdateOrganization,
+			DecodeUpdateOrganizationRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP)
 	})
 
 	return r
