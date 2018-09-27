@@ -46,3 +46,6 @@ jobs:
     - stage: organization
       script: make test-organization
       if: branch =~ /^feature\/organization(\/.*$|)/
+    - stage: follow
+      script: make test-follow
+      if: branch =~ /^feature\/follow(\/.*$|)/

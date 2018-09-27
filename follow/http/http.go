@@ -31,12 +31,32 @@ func NewHTTPHandler(s service.Service, endpoints endpoints.Endpoints, logger log
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 
-	//TODO: Add authorization for all endpoints
+	r.Route("/", func(r chi.Router) {
+		r.Post("/follow", httptransport.NewServer(
+			endpoints.CreateFollow,
+			DecodeCreateFollowRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP)
 
-	// endpoints
-	r.Post("/", httptransport.NewServer(
-		endpoints.CreateFollow,
-		DecodeCreateFollowRequest,
+		r.Put("/unfollow", httptransport.NewServer(
+			endpoints.UnFollow,
+			DecodeUnFollowRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP)
+	})
+
+	r.Get("/follower/{user_id}", httptransport.NewServer(
+		endpoints.GetFollower,
+		DecodeFollowerListRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP)
+
+	r.Get("/followee/{user_id}", httptransport.NewServer(
+		endpoints.GetFollowee,
+		DecodeFolloweeListRequest,
 		encodeResponse,
 		options...,
 	).ServeHTTP)

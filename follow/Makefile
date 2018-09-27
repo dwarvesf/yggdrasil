@@ -10,4 +10,7 @@ dev: build
 	./server; rm server
 
 up: build
-	PORT=1493 ./server; rm server
+	PORT=3544 ./server; rm server
+
+test: 
+	go test ./...

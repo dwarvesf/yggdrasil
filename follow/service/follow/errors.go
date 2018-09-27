@@ -3,26 +3,52 @@ package follow
 import "net/http"
 
 var (
-	//ErrNameEmpty check Name not empty
-	ErrNameEmpty = errNameEmpty{}
+	//ErrFromUserUUIDEmpty ...
+	ErrFromUserUUIDEmpty = errFromUserUUIDEmpty{}
+	//ErrToUserUUIDEmpty ...
+	ErrToUserUUIDEmpty = errToUserUUIDEmpty{}
+	//ErrorCreateFollow ...
+	ErrorCreateFollow = errCreateFollow{}
+	//ErrUnfollow ...
+	ErrUnfollow = errUnfollow{}
 )
 
-type errOrganization struct{}
+type errFromUserUUIDEmpty struct{}
 
-func (errOrganization) Error() string {
-	return "Organization invalid"
+func (errFromUserUUIDEmpty) Error() string {
+	return "FromUser UUID empty"
 }
 
-func (errOrganization) StatusCode() int {
+func (errFromUserUUIDEmpty) StatusCode() int {
 	return http.StatusBadRequest
 }
 
-type errNameEmpty struct{}
+type errToUserUUIDEmpty struct{}
 
-func (errNameEmpty) Error() string {
-	return "Name empty"
+func (errToUserUUIDEmpty) Error() string {
+	return "ToUser UUID empty"
 }
 
-func (errNameEmpty) StatusCode() int {
+func (errToUserUUIDEmpty) StatusCode() int {
+	return http.StatusBadRequest
+}
+
+type errCreateFollow struct{}
+
+func (errCreateFollow) Error() string {
+	return "Follow error"
+}
+
+func (errCreateFollow) StatusCode() int {
+	return http.StatusBadRequest
+}
+
+type errUnfollow struct{}
+
+func (errUnfollow) Error() string {
+	return "User hasn't existed yet"
+}
+
+func (errUnfollow) StatusCode() int {
 	return http.StatusBadRequest
 }

@@ -43,6 +43,13 @@ curl -X PUT --url $PRIVATE_IP:8500/v1/kv/kafka \
     "port": 9092
 }'
 
+curl -X PUT --url $PRIVATE_IP:8500/v1/kv/db-networks \
+    -d '{
+    "user": "admin",
+    "password": "123",
+    "db": "networks"
+}'
+
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/fcm_credentials \
     -d '{
         "type": "service_account",

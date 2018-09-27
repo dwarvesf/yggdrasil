@@ -7,6 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
+	"github.com/dwarvesf/yggdrasil/follow/model"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
@@ -18,6 +19,7 @@ type PG struct {
 
 // Migrate use to migrate database
 func Migrate(db *gorm.DB) {
+	db.AutoMigrate(&model.Follow{})
 }
 
 // New use to connect with database
@@ -27,7 +29,7 @@ func New(c *consul.Client) (*gorm.DB, func()) {
 		panic(err)
 	}
 
-	v, err := toolkit.GetConsulValueFromKey(c, "db-follow")
+	v, err := toolkit.GetConsulValueFromKey(c, "db-networks")
 	if err != nil {
 		panic(err)
 	}
