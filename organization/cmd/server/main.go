@@ -13,11 +13,7 @@ import (
 	consul "github.com/hashicorp/consul/api"
 
 	"github.com/dwarvesf/yggdrasil/organization/db"
-	"github.com/dwarvesf/yggdrasil/organization/endpoints"
 	serviceHttp "github.com/dwarvesf/yggdrasil/organization/http"
-	"github.com/dwarvesf/yggdrasil/organization/middlewares"
-	"github.com/dwarvesf/yggdrasil/organization/service"
-	"github.com/dwarvesf/yggdrasil/organization/service/organization"
 )
 
 func main() {
@@ -44,25 +40,7 @@ func main() {
 	db.Migrate(pgdb)
 	defer closeDB()
 
-	var s service.Service
-	{
-		s = service.Service{
-			OrganizationService: middlewares.Compose(
-				organization.NewPGService(pgdb),
-				organization.ValidationMiddleware(),
-			).(organization.Service),
-		}
-	}
-
-	var h http.Handler
-	{
-		h = serviceHttp.NewHTTPHandler(
-			s,
-			endpoints.MakeServerEndpoints(s),
-			logger,
-			true,
-		)
-	}
+	h := serviceHttp.NewHTTPHandler(pgdb, logger, true)
 
 	errs := make(chan error)
 	go func() {

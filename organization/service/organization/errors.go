@@ -20,7 +20,7 @@ func (errOrganization) StatusCode() int {
 type errNameEmpty struct{}
 
 func (errNameEmpty) Error() string {
-	return "Name empty"
+	return "NAME_EMPTY"
 }
 
 func (errNameEmpty) StatusCode() int {

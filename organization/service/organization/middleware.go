@@ -17,6 +17,10 @@ func ValidationMiddleware() func(Service) Service {
 	}
 }
 
-func (mw validationMiddleware) Save(o *model.Organization) (err error) {
+func (mw validationMiddleware) Save(o *model.Organization) error {
+	if o.Name == "" {
+		return ErrNameEmpty
+	}
+
 	return mw.Service.Save(o)
 }

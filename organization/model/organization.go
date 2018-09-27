@@ -18,7 +18,7 @@ const (
 // Organization status 0 is inactive, 1 is active
 type Organization struct {
 	ID        uuid.UUID          `json:"id" gorm:"not null"`
-	Name      string             `json:"username" gorm:"default:''"`
+	Name      string             `json:"name" gorm:"default:''"`
 	Status    OrganizationStatus `json:"status" gorm:"default:'1'"`
 	Metadata  postgres.Jsonb     `json:"metadata" gorm:"type:jsonb"`
 	Groups    []Group            `json:"organizations"`

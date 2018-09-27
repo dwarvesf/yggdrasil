@@ -70,6 +70,9 @@ test-payment:
 test-scheduler:
 	go test ./scheduler/...
 
+test-organization:
+	go test ./organization/...
+
 # Test for all project
 test:
 	go test ./...

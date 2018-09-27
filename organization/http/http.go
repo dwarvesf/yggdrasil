@@ -7,13 +7,27 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/jinzhu/gorm"
 
 	"github.com/dwarvesf/yggdrasil/organization/endpoints"
+	"github.com/dwarvesf/yggdrasil/organization/middlewares"
 	"github.com/dwarvesf/yggdrasil/organization/service"
+	"github.com/dwarvesf/yggdrasil/organization/service/organization"
 )
 
-// NewHTTPHandler ...
-func NewHTTPHandler(s service.Service, endpoints endpoints.Endpoints, logger log.Logger, useCORS bool) http.Handler {
+// NewHTTPHandler that create main handler of the app
+func NewHTTPHandler(pgdb *gorm.DB, logger log.Logger, useCORS bool) http.Handler {
+	s := service.Service{
+		OrganizationService: middlewares.Compose(
+			organization.NewPGService(pgdb),
+			organization.ValidationMiddleware(),
+		).(organization.Service),
+	}
+
+	return configHandler(s, endpoints.MakeServerEndpoints(s), logger, useCORS)
+}
+
+func configHandler(s service.Service, endpoints endpoints.Endpoints, logger log.Logger, useCORS bool) http.Handler {
 	r := chi.NewRouter()
 
 	if useCORS {
@@ -31,15 +45,17 @@ func NewHTTPHandler(s service.Service, endpoints endpoints.Endpoints, logger log
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 
-	//TODO: Add authorization for all endpoints
+	// TODO: Add authorization for all endpoints
 
 	// endpoints
-	r.Post("/", httptransport.NewServer(
-		endpoints.CreateOrganization,
-		DecodeCreateOrganizationRequest,
-		encodeResponse,
-		options...,
-	).ServeHTTP)
+	r.Route("/organizations", func(r chi.Router) {
+		r.Post("/", httptransport.NewServer(
+			endpoints.CreateOrganization,
+			DecodeCreateOrganizationRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP)
+	})
 
 	return r
 }
