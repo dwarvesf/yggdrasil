@@ -1,8 +1,6 @@
 package follow
 
 import (
-	"fmt"
-
 	"github.com/satori/go.uuid"
 
 	"github.com/dwarvesf/yggdrasil/follow/model"
@@ -57,7 +55,6 @@ func (mw validationMiddleware) UnFollow(fromUser, toUser uuid.UUID) (err error) 
 	})
 
 	if len(res) == 0 {
-		fmt.Println("follow = 0")
 		return ErrUnfollow
 	}
 
