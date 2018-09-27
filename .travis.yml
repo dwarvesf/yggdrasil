@@ -37,6 +37,9 @@ jobs:
     - stage: notification
       script: make test-notification
       if: branch =~ /^feature\/notification(\/.*$|)/
+    - stage: test-notification
+      script: make test-notification
+      if: branch =~ /^hotfix\/notification(\/.*$|)/
     - stage: sms
       script: make test-sms
       if: branch =~ /^feature\/sms(\/.*$|)/

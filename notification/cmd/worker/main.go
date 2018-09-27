@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	b64 "encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 	consul "github.com/hashicorp/consul/api"
 	validator "gopkg.in/validator.v2"
 
+	cfg "github.com/dwarvesf/yggdrasil/notification/cmd/config"
 	"github.com/dwarvesf/yggdrasil/notification/model"
 	notification "github.com/dwarvesf/yggdrasil/notification/service"
 	"github.com/dwarvesf/yggdrasil/toolkit"
@@ -43,6 +45,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	//get fcm credentials
+	fcmCredentials, err := toolkit.GetConsulValueFromKey(consulClient, "fcm_credentials")
+	sDec, _ := b64.StdEncoding.DecodeString(fcmCredentials)
+	cfg.FirebaseCredentials = sDec
 
 	svcName := "notification"
 	go func() {
@@ -108,12 +115,7 @@ func sendNotification(p model.Payload, consulClient *consul.Client) (string, err
 
 	switch p.Provider {
 	case "firebase":
-		fcmCredentials, err := toolkit.GetConsulValueFromKey(consulClient, "fcm_credentials")
-		if err != nil {
-			return "", err
-		}
-
-		firebaseNotifier := notification.New(ctx, []byte(fcmCredentials))
+		firebaseNotifier := notification.New(ctx, cfg.FirebaseCredentials)
 		return firebaseNotifier.Send(ctx, p.DeviceToken, p.Body, p.Title)
 	default:
 		return "", errors.New("INVALID_PROVIDER")
