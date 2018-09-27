@@ -55,21 +55,5 @@ func (s *pgService) GetList(query Query) ([]model.Device, error) {
 }
 
 func (s *pgService) Update(d *model.Device) error {
-	var oldDevice model.Device
-	err := s.db.Where("id = ?", d.ID).First(&oldDevice).Error
-
-	if err != nil {
-		return err
-	}
-	if len(d.Metadata.RawMessage) == 0 {
-		d.Metadata = oldDevice.Metadata
-	}
-	if d.FCMToken == "" {
-		d.FCMToken = oldDevice.FCMToken
-	}
-	if d.Status == 0 {
-		d.Status = oldDevice.Status
-	}
-
-	return s.db.Save(&d).Error
+	return s.db.Model(&model.Device{}).Where("id = ?", d.ID).First(&d).Updates(&d).Error
 }
