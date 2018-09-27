@@ -2,8 +2,10 @@ package organization
 
 import (
 	"github.com/dwarvesf/yggdrasil/organization/model"
+	uuid "github.com/satori/go.uuid"
 )
 
 type Service interface {
-	Save(o *model.Organization) error
+	Create(name string) (*model.Organization, error)
+	Update(orgID uuid.UUID, name string) (*model.Organization, error)
 }
