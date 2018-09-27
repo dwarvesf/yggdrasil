@@ -28,12 +28,9 @@ jobs:
     - stage: identity
       script: make test-identity
       if: branch =~ /^feature\/identity(\/.*$|)/
-    - stage: travis
-      script: echo "Travis success"
-      if: branch = feature/travis-ci
-    - stage: develop
-      script: make test
-      if: branch = develop
+    - stage: device
+      script: make test-device
+      if: branch =~ /^feature\/device(\/.*$|)/
     - stage: notification
       script: make test-notification
       if: branch =~ /^feature\/notification(\/.*$|)/
