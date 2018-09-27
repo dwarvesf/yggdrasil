@@ -1,10 +1,10 @@
 version: "3.5"
 services:
   organization:
-    image: organization
-    container_name: organization
+    image: follow
+    container_name: follow
     build:
-      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/organization
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/follow
     env_file:
       - .env
     external_links:
@@ -14,7 +14,7 @@ services:
       - ${PORT}:${PORT}
     networks:
       service-mesh:
-        ipv4_address: 10.5.0.8
+        ipv4_address: ${PRIVATE_IP}
 
 networks:
   service-mesh:

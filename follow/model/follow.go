@@ -12,6 +12,7 @@ type Follow struct {
 	ID        uuid.UUID `json:"id" gorm:"not null"`
 	FromUser  uuid.UUID
 	ToUser    uuid.UUID
+	Status    uint8      `gorm:"default:'1'"`
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `sql:"index" json:"deleted_at"`

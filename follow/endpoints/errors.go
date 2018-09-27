@@ -3,16 +3,28 @@ package endpoints
 import "net/http"
 
 var (
-	//ErrorInvalidLogin return login fail message
-	ErrorInvalidLogin = errInvalidLogin{}
+	//ErrGetFollower ...
+	ErrGetFollower = errGetFollower{}
+	//ErrGetFollowee ...
+	ErrGetFollowee = errGetFollowee{}
 )
 
-type errInvalidLogin struct{}
+type errGetFollower struct{}
 
-func (errInvalidLogin) Error() string {
-	return "User name and password is invalid"
+func (errGetFollower) Error() string {
+	return "Get follower error"
 }
 
-func (errInvalidLogin) StatusCode() int {
-	return http.StatusUnauthorized
+func (errGetFollower) StatusCode() int {
+	return http.StatusBadRequest
+}
+
+type errGetFollowee struct{}
+
+func (errGetFollowee) Error() string {
+	return "Get followee error"
+}
+
+func (errGetFollowee) StatusCode() int {
+	return http.StatusBadRequest
 }

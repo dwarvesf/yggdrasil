@@ -6,13 +6,20 @@ import (
 	"github.com/dwarvesf/yggdrasil/follow/service"
 )
 
+//Endpoints ...
 type Endpoints struct {
 	CreateFollow endpoint.Endpoint
+	UnFollow     endpoint.Endpoint
+	GetFollower  endpoint.Endpoint
+	GetFollowee  endpoint.Endpoint
 }
 
 // MakeServerEndpoints returns an Endpoints struct
 func MakeServerEndpoints(s service.Service) Endpoints {
 	return Endpoints{
-		CreateFollow: CreateFollowEndpoint(s),
+		CreateFollow: CreateFollowEndpoints(s),
+		UnFollow:     UnFollowEndpoints(s),
+		GetFollower:  MakeFollowerEndpoints(s),
+		GetFollowee:  MakeFolloweeEndpoints(s),
 	}
 }

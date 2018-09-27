@@ -36,6 +36,7 @@ func main() {
 	consulClient, err := consul.NewClient(&consul.Config{
 		Address: fmt.Sprintf("consul-server:8500"),
 	})
+
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +48,7 @@ func main() {
 	var s service.Service
 	{
 		s = service.Service{
-			Follow: middlewares.Compose(
+			FollowService: middlewares.Compose(
 				follow.NewPGService(pgdb),
 				follow.ValidationMiddleware(),
 			).(follow.Service),

@@ -6,3 +6,5 @@ import "github.com/dwarvesf/yggdrasil/follow/service/follow"
 type Service struct {
 	FollowService follow.Service
 }
+
+
