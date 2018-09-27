@@ -17,10 +17,18 @@ func ValidationMiddleware() func(Service) Service {
 	}
 }
 
-func (mw validationMiddleware) Save(o *model.Organization) error {
-	if o.Name == "" {
-		return ErrNameEmpty
+func (mw validationMiddleware) Create(org *model.Organization) (*model.Organization, error) {
+	if org.Name == "" {
+		return nil, ErrNameEmpty
 	}
 
-	return mw.Service.Save(o)
+	return mw.Service.Create(org)
+}
+
+func (mw validationMiddleware) Update(org *model.Organization) (*model.Organization, error) {
+	if org.Name == "" {
+		return nil, ErrNameEmpty
+	}
+
+	return mw.Service.Update(org)
 }

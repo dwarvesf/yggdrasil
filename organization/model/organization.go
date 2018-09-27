@@ -28,7 +28,13 @@ type Organization struct {
 }
 
 // BeforeCreate ...
-func (m *Organization) BeforeCreate(scope *gorm.Scope) error {
+func (o *Organization) BeforeCreate(scope *gorm.Scope) error {
 	scope.SetColumn("ID", uuid.NewV4())
+	return nil
+}
+
+// BeforeSave ...
+func (o *Organization) BeforeSave() error {
+	o.UpdatedAt = time.Now()
 	return nil
 }
