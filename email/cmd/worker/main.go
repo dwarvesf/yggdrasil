@@ -14,8 +14,6 @@ import (
 
 	"github.com/dwarvesf/yggdrasil/email/model"
 	email "github.com/dwarvesf/yggdrasil/email/service"
-
-	// "github.com/dwarvesf/yggdrasil/email/service/sendgrid"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 	"github.com/dwarvesf/yggdrasil/toolkit/queue"
 	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
