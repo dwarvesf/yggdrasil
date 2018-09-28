@@ -7,6 +7,13 @@ curl -X PUT --url $PRIVATE_IP:8500/v1/kv/sendgrid -d $SENDGRID_API_KEY
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/mandrill -d $MANDRILL_API_KEY
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/fcm -d $FCM_SERVER_KEY
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/jwt_secret -d $JWT_SECRET
+curl -X PUT --url $PRIVATE_IP:8500/v1/kv/mailgun \
+    -d '{
+    "api_key":"'$MAILGUN_API_KEY'",
+    "pub_key":"'$MAILGUN_PUB_KEY'",
+    "domain":"'$MAILGUN_DOMAIN'",
+    "host":"'$MAILGUN_HOSTNAME'"
+}'
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/twilio \
     -d '{
     "sid":"'$TWILIO_SID'",

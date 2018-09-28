@@ -4,14 +4,23 @@ import (
 	sendgrid "github.com/sendgrid/sendgrid-go"
 )
 
-type SendGridClient struct {
+//SendGrider contain method send email via Sendgrid
+type SendGrider interface {
+	New(apiKey string) *Client
+	Send() error
+}
+
+//Client contain Sendgrid client
+type Client struct {
 	c *sendgrid.Client
 }
 
-func New(apiKey string) *SendGridClient {
-	return &SendGridClient{c: sendgrid.NewSendClient(apiKey)}
+//New create new Sendgrid client
+func New(apiKey string) *Client {
+	return &Client{c: sendgrid.NewSendClient(apiKey)}
 }
 
-func (sc SendGridClient) Send() error {
+//Send send email via Sendgrid
+func (sc Client) Send() error {
 	return nil
 }

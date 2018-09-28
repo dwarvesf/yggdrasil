@@ -21,8 +21,15 @@ type Payload struct {
 	Retry      int               `json:"retry"`
 	Sent       bool              `json:"sent"`
 }
-
 type Person struct {
 	Name  string `validate:"nonzero"`
 	Email string `validate:"nonzero"`
+}
+
+//MailgunSecret contain Mailgun secret
+type MailgunSecret struct {
+	APIKey    string `json:"api_key"`
+	PublicKey string `json:"pub_key"`
+	Domain    string `json:"domain"`
+	HostName  string `json:"host"`
 }
