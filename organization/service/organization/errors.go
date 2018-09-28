@@ -2,19 +2,20 @@ package organization
 
 import "net/http"
 
+// Organization errors
 var (
-	//ErrNameEmpty check Name not empty
 	ErrNameEmpty = errNameEmpty{}
+	ErrNotFound  = errNotFound{}
 )
 
-type errOrganization struct{}
+type errNotFound struct{}
 
-func (errOrganization) Error() string {
-	return "Organization invalid"
+func (errNotFound) Error() string {
+	return "NOT_FOUND"
 }
 
-func (errOrganization) StatusCode() int {
-	return http.StatusBadRequest
+func (errNotFound) StatusCode() int {
+	return http.StatusNotFound
 }
 
 type errNameEmpty struct{}

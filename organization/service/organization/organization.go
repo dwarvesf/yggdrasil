@@ -5,5 +5,6 @@ import (
 )
 
 type Service interface {
-	Save(o *model.Organization) error
+	Create(org *model.Organization) (*model.Organization, error)
+	Update(org *model.Organization) (*model.Organization, error)
 }
