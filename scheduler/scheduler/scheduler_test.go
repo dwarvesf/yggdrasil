@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
@@ -9,26 +10,32 @@ import (
 
 	"github.com/dwarvesf/yggdrasil/scheduler/model"
 	"github.com/dwarvesf/yggdrasil/scheduler/service"
-	"github.com/dwarvesf/yggdrasil/scheduler/testutils"
+	"github.com/dwarvesf/yggdrasil/scheduler/service/request"
+	"github.com/dwarvesf/yggdrasil/scheduler/util/testutil"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 
 func TestListenMessagesWhenInvalidShouldNotSave(t *testing.T) {
+	// Request
+	pgdb := testutil.GetDB()
+	defer pgdb.Close()
+	requestService := request.NewPGService(pgdb)
+
+	// Queue
 	requests := make(chan []byte)
-	requestService := &testutils.MockRequestService{
-		Requests: make([]model.RequestEntity, 0),
-	}
-	queueService := &testutils.MockQueueService{
+	queueService := &testutil.MockQueueService{
 		ReadData: requests,
 	}
+
+	// Scheduler
 	s := service.Service{
 		RequestService: requestService,
 		QueueService:   queueService,
 	}
-
 	sch := NewScheduler(s, log.NewNopLogger())
 	go sch.ListenMessages()
 
+	// Given
 	retry := toolkit.RetryMetadata{
 		CurrenyRetry: 2,
 		MaxRetry:     3,
@@ -45,27 +52,38 @@ func TestListenMessagesWhenInvalidShouldNotSave(t *testing.T) {
 	requests <- r
 	time.Sleep(100 * time.Millisecond)
 
-	if len(requestService.Requests) > 0 {
-		t.Errorf("Expect number of saved requests to be zero, but got %v", len(requestService.Requests))
+	// Expect
+	var entities []model.RequestEntity
+	err = pgdb.Find(&entities).Error
+	if err != nil {
+		panic(err)
+	}
+	if len(entities) > 0 {
+		t.Errorf("Expect number of saved requests to be zero, but got %v", len(entities))
 	}
 }
 
 func TestListenMessagesWhenMessageValidShouldSave(t *testing.T) {
+	// Request
+	pgdb := testutil.GetDB()
+	defer pgdb.Close()
+	requestService := request.NewPGService(pgdb)
+
+	// Queue
 	requests := make(chan []byte)
-	requestService := &testutils.MockRequestService{
-		Requests: make([]model.RequestEntity, 0),
-	}
-	queueService := &testutils.MockQueueService{
+	queueService := &testutil.MockQueueService{
 		ReadData: requests,
 	}
+
+	// Scheduler
 	s := service.Service{
 		RequestService: requestService,
 		QueueService:   queueService,
 	}
-
 	sch := NewScheduler(s, log.NewNopLogger())
 	go sch.ListenMessages()
 
+	// Given
 	retry := toolkit.RetryMetadata{
 		CurrenyRetry: 2,
 		MaxRetry:     3,
@@ -82,17 +100,27 @@ func TestListenMessagesWhenMessageValidShouldSave(t *testing.T) {
 	requests <- r
 	time.Sleep(100 * time.Millisecond)
 
-	if len(requestService.Requests) != 1 {
-		t.Errorf("Expect number of saved requests to be 1, but got %v", len(requestService.Requests))
+	// Expect
+	var entities []model.RequestEntity
+	err = pgdb.Find(&entities).Error
+	if err != nil {
+		panic(err)
 	}
-
-	if requestService.Requests[0].Service != "email" {
-		t.Errorf("Expect request sevice is email, but got %v", requestService.Requests[0].Service)
+	if len(entities) != 1 {
+		t.Errorf("Expect number of saved requests to be 1, but got %v", len(entities))
+	}
+	if entities[0].Service != "email" {
+		t.Errorf("Expect request sevice is email, but got %v", entities[0].Service)
 	}
 }
 
 func TestHandleRequests(t *testing.T) {
-	// Prepare request
+	// Request
+	pgdb := testutil.GetDB()
+	defer pgdb.Close()
+	requestService := request.NewPGService(pgdb)
+
+	// Given
 	retry := toolkit.RetryMetadata{
 		CurrenyRetry: 1,
 		MaxRetry:     3,
@@ -102,39 +130,34 @@ func TestHandleRequests(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-
-	requests := make([]model.RequestEntity, 2)
-	requests[0] = model.RequestEntity{
+	requestService.SaveRequest(model.RequestEntity{
 		Service:   "sms",
-		Payload:   testutils.MockPayload("sms"),
+		Payload:   testutil.MockPayload("sms"),
 		Timestamp: time.Now().Add(-10 * time.Second),
 		Retry:     string(retryRaw),
-	}
-	requests[0].ID = 1
-	requests[1] = model.RequestEntity{
-		Service:   "payment",
-		Payload:   testutils.MockPayload("payment"),
-		Timestamp: time.Now().Add(-5 * time.Second),
+	})
+	requestService.SaveRequest(model.RequestEntity{
+		Service:   "email",
+		Payload:   testutil.MockPayload("email"),
+		Timestamp: time.Now().Add(10 * time.Second),
 		Retry:     string(retryRaw),
-	}
-	requests[1].ID = 2
+	})
 
-	writeMessages := make(chan testutils.Output)
-	requestService := &testutils.MockRequestService{
-		Requests: requests,
-	}
-	queueService := &testutils.MockQueueService{
+	// Queue
+	writeMessages := make(chan testutil.Output)
+	queueService := &testutil.MockQueueService{
 		WriteData: writeMessages,
 	}
+
+	// Scheduler
 	s := service.Service{
 		RequestService: requestService,
 		QueueService:   queueService,
 	}
+	sch := NewScheduler(s, log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout)))
+	go sch.HandleRequests(100 * time.Millisecond)
 
-	sch := NewScheduler(s, log.NewNopLogger())
-	go sch.HandleRequests(1 * time.Second)
-
-	// Validate send sms
+	// Expect send sms
 	output := <-writeMessages
 	var response model.Response
 	if output.Topic != "sms" {
@@ -156,36 +179,17 @@ func TestHandleRequests(t *testing.T) {
 		t.Errorf("Expect RetryAfter to be 1 second, but got %v", response.Retry.RetryAfter)
 	}
 
-	// Validate send payment
-	output = <-writeMessages
-	if output.Topic != "payment" {
-		t.Errorf("Expect topic to be payment, but got %v", output.Topic)
-	}
-	if err := json.Unmarshal(output.Data, &response); err != nil {
+	// Expect not send email
+	time.Sleep(100 * time.Millisecond)
+	var entities []model.RequestEntity
+	err = pgdb.Find(&entities).Error
+	if err != nil {
 		panic(err)
 	}
-	if response.Payload["content"] != "payment" {
-		t.Errorf("Expect content to be payment, but got %v", response.Payload["content"])
+	if len(entities) != 1 {
+		t.Errorf("Expect number of saved requests to be 1, but got %v", len(entities))
 	}
-	if response.Retry.CurrenyRetry != 2 {
-		t.Errorf("Expect CurrenyRetry to be 2, but got %v", response.Retry.CurrenyRetry)
-	}
-	if response.Retry.MaxRetry != 3 {
-		t.Errorf("Expect MaxRetry to be 3, but got %v", response.Retry.MaxRetry)
-	}
-	if response.Retry.RetryAfter != time.Second {
-		t.Errorf("Expect RetryAfter to be 1 second, but got %v", response.Retry.RetryAfter)
-	}
-
-	// Validate delete requests
-	time.Sleep(100 * time.Millisecond)
-	if len(requestService.DeletedIds) != 2 {
-		t.Errorf("Expect number of deleted ids to be 2, but got %v", len(requestService.DeletedIds))
-	}
-	if requestService.DeletedIds[0] != 1 {
-		t.Errorf("Expect element with id 1 is deleted, but got %v", requestService.DeletedIds[0])
-	}
-	if requestService.DeletedIds[1] != 2 {
-		t.Errorf("Expect element with id 2 is deleted, but got %v", requestService.DeletedIds[1])
+	if entities[0].Service != "email" {
+		t.Errorf("Expect request sevice is email, but got %v", entities[0].Service)
 	}
 }
