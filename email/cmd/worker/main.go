@@ -14,7 +14,6 @@ import (
 
 	"github.com/dwarvesf/yggdrasil/email/model"
 	email "github.com/dwarvesf/yggdrasil/email/service"
-	"github.com/dwarvesf/yggdrasil/email/service/sendgrid"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 	"github.com/dwarvesf/yggdrasil/toolkit/queue"
 	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
@@ -96,7 +95,7 @@ func main() {
 }
 
 func sendEmail(r model.Request, consulClient *consul.Client) error {
-	var emailer email.Emailer
+	var email email.Email
 
 	switch r.Payload.Provider {
 	case "sendgrid":
@@ -104,8 +103,22 @@ func sendEmail(r model.Request, consulClient *consul.Client) error {
 		if v == "" {
 			v, _ = toolkit.GetConsulValueFromKey(consulClient, "sendgrid")
 		}
-		emailer = sendgrid.New(v)
-		return emailer.Send()
+		sendgrid := email.SendGrid.New(v)
+		return sendgrid.Send()
+	case "mailgun":
+		v := os.Getenv("MAILGUN")
+		if v == "" {
+			v, _ = toolkit.GetConsulValueFromKey(consulClient, "mailgun")
+		}
+
+		value := model.MailgunSecret{}
+		err := json.Unmarshal([]byte(v), &value)
+		if err != nil {
+			return err
+		}
+
+		mailgun := email.Mailgun.New(value.Domain, value.APIKey, value.PublicKey)
+		return mailgun.Send(value.Domain, r.Payload.Content, r.Payload.To.Email)
 	default:
 		return errors.New("INVALID_PROVIDER")
 	}
