@@ -22,12 +22,20 @@ func (mw validationMiddleware) Create(org *model.Organization) (*model.Organizat
 		return nil, ErrNameEmpty
 	}
 
+	if org.Metadata == nil {
+		org.Metadata = make(model.Metadata)
+	}
+
 	return mw.Service.Create(org)
 }
 
 func (mw validationMiddleware) Update(org *model.Organization) (*model.Organization, error) {
 	if org.Name == "" {
 		return nil, ErrNameEmpty
+	}
+
+	if org.Metadata == nil {
+		org.Metadata = make(model.Metadata)
 	}
 
 	return mw.Service.Update(org)

@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
-	"github.com/jinzhu/gorm/dialects/postgres"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -20,8 +19,8 @@ type Organization struct {
 	ID        uuid.UUID          `json:"id" gorm:"not null"`
 	Name      string             `json:"name" gorm:"default:''"`
 	Status    OrganizationStatus `json:"status" gorm:"default:'1'"`
-	Metadata  postgres.Jsonb     `json:"metadata" gorm:"type:jsonb"`
-	Groups    []Group            `json:"organizations"`
+	Metadata  Metadata           `json:"metadata" gorm:"type:jsonb"`
+	Groups    []Group            `json:"groups"`
 	CreatedAt time.Time          `json:"created_at"`
 	UpdatedAt time.Time          `json:"updated_at"`
 	DeletedAt *time.Time         `sql:"index" json:"deleted_at"`
