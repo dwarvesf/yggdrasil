@@ -3,7 +3,7 @@ package follow
 import (
 	"github.com/satori/go.uuid"
 
-	"github.com/dwarvesf/yggdrasil/follow/model"
+	"github.com/dwarvesf/yggdrasil/networks/model"
 )
 
 type validationMiddleware struct {

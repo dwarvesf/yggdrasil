@@ -1,10 +1,10 @@
 version: "3.5"
 services:
   organization:
-    image: follow
-    container_name: follow
+    image: networks
+    container_name: networks
     build:
-      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/follow
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/networks
     env_file:
       - .env
     external_links:

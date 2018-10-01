@@ -12,12 +12,12 @@ import (
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 
-	"github.com/dwarvesf/yggdrasil/follow/db"
-	"github.com/dwarvesf/yggdrasil/follow/endpoints"
-	serviceHttp "github.com/dwarvesf/yggdrasil/follow/http"
-	"github.com/dwarvesf/yggdrasil/follow/middlewares"
-	"github.com/dwarvesf/yggdrasil/follow/service"
-	"github.com/dwarvesf/yggdrasil/follow/service/follow"
+	"github.com/dwarvesf/yggdrasil/networks/db"
+	"github.com/dwarvesf/yggdrasil/networks/endpoints"
+	serviceHttp "github.com/dwarvesf/yggdrasil/networks/http"
+	"github.com/dwarvesf/yggdrasil/networks/middlewares"
+	"github.com/dwarvesf/yggdrasil/networks/service"
+	"github.com/dwarvesf/yggdrasil/networks/service/follow"
 )
 
 func main() {
@@ -80,7 +80,7 @@ func main() {
 
 		agent := consulClient.Agent()
 
-		name := "follow"
+		name := "networks"
 		if err := agent.ServiceRegister(&consul.AgentServiceRegistration{
 			Name:    name,
 			Port:    port,

@@ -12,7 +12,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/dwarvesf/yggdrasil/follow/model"
+	"github.com/dwarvesf/yggdrasil/networks/model"
 )
 
 // DB info

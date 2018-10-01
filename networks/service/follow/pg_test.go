@@ -7,8 +7,8 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/satori/go.uuid"
 
-	"github.com/dwarvesf/yggdrasil/follow/model"
-	"github.com/dwarvesf/yggdrasil/follow/util/testutil"
+	"github.com/dwarvesf/yggdrasil/networks/model"
+	"github.com/dwarvesf/yggdrasil/networks/util/testutil"
 )
 
 func Test_pgService_Save(t *testing.T) {

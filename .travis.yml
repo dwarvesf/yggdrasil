@@ -46,9 +46,12 @@ jobs:
     - stage: organization
       script: make test-organization
       if: branch =~ /^feature\/organization(\/.*$|)/
-    - stage: follow
-      script: make test-follow
-      if: branch =~ /^feature\/follow(\/.*$|)/
     - stage: refactor
       script: make test
       if: branch =~ /^refactor\/(\/.*$|)/
+    - stage: networks
+      script: make test-networks
+      if: branch =~ /^feature\/networks(\/.*$|)/
+    - stage: features
+      script: make test
+      if: branch =~ /^feature(\/.*$|)/

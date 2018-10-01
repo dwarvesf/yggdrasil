@@ -3,7 +3,7 @@ package follow
 import (
 	"testing"
 
-	"github.com/dwarvesf/yggdrasil/follow/model"
+	"github.com/dwarvesf/yggdrasil/networks/model"
 	"github.com/satori/go.uuid"
 )
 
