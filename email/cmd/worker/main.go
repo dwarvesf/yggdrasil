@@ -11,10 +11,11 @@ import (
 
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
-	"github.com/k0kubun/pp"
 
 	"github.com/dwarvesf/yggdrasil/email/model"
 	email "github.com/dwarvesf/yggdrasil/email/service"
+	mailgun "github.com/dwarvesf/yggdrasil/email/service/mailgun"
+	sendgrid "github.com/dwarvesf/yggdrasil/email/service/sendgrid"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 	"github.com/dwarvesf/yggdrasil/toolkit/queue"
 	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
@@ -47,7 +48,6 @@ func main() {
 	go func() {
 		port, err := strconv.Atoi(os.Getenv("PORT"))
 		if err != nil {
-			pp.Print("xxxxxxxxxxxxxxxxxxxxxxxxxxx")
 			panic(err)
 		}
 		logger.Log("consul", "registering", "name", svcName)
@@ -97,7 +97,7 @@ func main() {
 }
 
 func sendEmail(r model.Request, consulClient *consul.Client) error {
-	var emailer email.Emailer
+	var email email.Email
 
 	switch r.Payload.Provider {
 	case "sendgrid":
@@ -106,8 +106,8 @@ func sendEmail(r model.Request, consulClient *consul.Client) error {
 			v, _ = toolkit.GetConsulValueFromKey(consulClient, "sendgrid")
 		}
 
-		sendgrid := emailer.NewSendgrid(v)
-		return sendgrid.SendSendgrid(v, &r)
+		sendgrid.New(v)
+		return email.Sendgrid.Send(v, &r)
 
 	case "mailgun":
 		v := os.Getenv("MAILGUN")
@@ -121,8 +121,8 @@ func sendEmail(r model.Request, consulClient *consul.Client) error {
 			return err
 		}
 
-		mailgun := emailer.NewMailgun(value.Domain, value.APIKey, value.PublicKey)
-		return mailgun.SendMailgun(value.Domain, r.Payload.Content, r.Payload.To.Email)
+		mailgun.New(value.Domain, value.APIKey, value.PublicKey)
+		return email.Mailgun.Send(value.Domain, r.Payload.Content, r.Payload.To.Email)
 
 	default:
 		return errors.New("INVALID_PROVIDER")

@@ -7,18 +7,18 @@ import (
 	"github.com/dwarvesf/yggdrasil/email/model"
 )
 
-//Client struct contains a Client struct
-type Client struct {
+//Sendgrid struct contains a Client struct
+type Sendgrid struct {
 	c sg.Client
 }
 
-// NewSendgrid returns a SendGridClient struct
-func NewSendgrid(apiKey string) *Client {
-	return &Client{c: *sg.NewSendClient(apiKey)}
+// New returns a SendGridClient struct
+func New(apiKey string) Sendgrider {
+	return Sendgrid{c: *sg.NewSendClient(apiKey)}
 }
 
-// SendSendgrid sends an email via sendgrid
-func (sc Client) SendSendgrid(apiKey string, req *model.Request) error {
+// Send sends an email via sendgrid
+func (sc Sendgrid) Send(apiKey string, req *model.Request) error {
 	m := mail.NewV3Mail()
 
 	fromName := req.Payload.From.Name
