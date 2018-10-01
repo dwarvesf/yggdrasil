@@ -8,8 +8,8 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 
-	"github.com/dwarvesf/yggdrasil/follow/endpoints"
-	"github.com/dwarvesf/yggdrasil/follow/service"
+	"github.com/dwarvesf/yggdrasil/networks/endpoints"
+	"github.com/dwarvesf/yggdrasil/networks/service"
 )
 
 // NewHTTPHandler ...

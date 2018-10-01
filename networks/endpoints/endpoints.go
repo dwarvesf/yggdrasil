@@ -3,7 +3,7 @@ package endpoints
 import (
 	"github.com/go-kit/kit/endpoint"
 
-	"github.com/dwarvesf/yggdrasil/follow/service"
+	"github.com/dwarvesf/yggdrasil/networks/service"
 )
 
 //Endpoints ...

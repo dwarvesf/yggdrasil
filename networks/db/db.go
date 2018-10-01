@@ -7,7 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	"github.com/dwarvesf/yggdrasil/follow/model"
+	"github.com/dwarvesf/yggdrasil/networks/model"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
 

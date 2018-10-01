@@ -4,9 +4,10 @@
 package follow
 
 import (
-	"github.com/dwarvesf/yggdrasil/follow/model"
-	"github.com/satori/go.uuid"
 	"sync"
+
+	"github.com/dwarvesf/yggdrasil/networks/model"
+	"github.com/satori/go.uuid"
 )
 
 var (

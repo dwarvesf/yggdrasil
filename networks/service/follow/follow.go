@@ -1,7 +1,7 @@
 package follow
 
 import (
-	"github.com/dwarvesf/yggdrasil/follow/model"
+	"github.com/dwarvesf/yggdrasil/networks/model"
 	uuid "github.com/satori/go.uuid"
 )
 

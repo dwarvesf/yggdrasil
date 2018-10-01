@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/dwarvesf/yggdrasil/follow/endpoints"
+	"github.com/dwarvesf/yggdrasil/networks/endpoints"
 )
 
 //DecodeCreateFollowRequest ...

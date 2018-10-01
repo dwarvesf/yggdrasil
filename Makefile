@@ -54,12 +54,12 @@ up-notification:
 	docker rm -f notification | true && \
 	docker-compose up -d --build --force-recreate; rm worker
 
-up-follow:
-	cd $(SRCPATH)/follow && make build-alpine && \
+up-networks:
+	cd $(SRCPATH)/networks && make build-alpine && \
 	docker rm -f follow | true && \
 	docker-compose up -d --build --force-recreate; rm server
 
-up: up-email up-sms up-payment up-notification up-scheduler up-identity up-device up-organization
+up: up-email up-sms up-payment up-notification up-scheduler up-identity up-device up-organization up-networks
 
 # Test for email and identity
 test-email:
@@ -83,8 +83,8 @@ test-scheduler:
 test-organization:
 	go test ./organization/...
 	
-test-follow:
-	go test ./follow/...
+test-networks:
+	go test ./networks/...
 
 test-device:
 	go test ./device/...

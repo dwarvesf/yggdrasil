@@ -6,9 +6,9 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/satori/go.uuid"
 
-	"github.com/dwarvesf/yggdrasil/follow/model"
-	"github.com/dwarvesf/yggdrasil/follow/service"
-	"github.com/dwarvesf/yggdrasil/follow/service/follow"
+	"github.com/dwarvesf/yggdrasil/networks/model"
+	"github.com/dwarvesf/yggdrasil/networks/service"
+	"github.com/dwarvesf/yggdrasil/networks/service/follow"
 )
 
 // CreateFollowRequest ...
