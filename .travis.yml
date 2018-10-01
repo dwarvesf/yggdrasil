@@ -49,3 +49,6 @@ jobs:
     - stage: follow
       script: make test-follow
       if: branch =~ /^feature\/follow(\/.*$|)/
+    - stage: refactor
+      script: make test
+      if: branch =~ /^refactor\/(\/.*$|)/

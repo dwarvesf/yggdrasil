@@ -1,9 +1,8 @@
-package testutils
+package testutil
 
 import (
 	"encoding/json"
 
-	"github.com/dwarvesf/yggdrasil/scheduler/model"
 	"github.com/dwarvesf/yggdrasil/toolkit/queue"
 )
 
@@ -18,31 +17,6 @@ func MockPayload(content string) string {
 	}
 
 	return string(res)
-}
-
-// MockRequestService to mock RequestService
-type MockRequestService struct {
-	Requests   []model.RequestEntity
-	DeletedIds []uint
-}
-
-// SaveRequest is mock implementation
-func (s *MockRequestService) SaveRequest(r model.RequestEntity) error {
-	s.Requests = append(s.Requests, r)
-
-	return nil
-}
-
-// GetRequests is mock implementation
-func (s *MockRequestService) GetRequests() ([]model.RequestEntity, error) {
-	return s.Requests, nil
-}
-
-// DeleteRequests is mock implementation
-func (s *MockRequestService) DeleteRequests(ids []uint) error {
-	s.DeletedIds = ids
-
-	return nil
 }
 
 // Output to mock output of writer
