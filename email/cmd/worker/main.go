@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/k0kubun/pp"
+
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 
@@ -46,6 +48,7 @@ func main() {
 	go func() {
 		port, err := strconv.Atoi(os.Getenv("PORT"))
 		if err != nil {
+			pp.Print("xxxxxxxxxxxxxxxxxxxxxxxxxxx")
 			panic(err)
 		}
 		logger.Log("consul", "registering", "name", svcName)
@@ -95,7 +98,7 @@ func main() {
 }
 
 func sendEmail(r model.Request, consulClient *consul.Client) error {
-	var email email.Email
+	var emailer email.Emailer
 
 	switch r.Payload.Provider {
 	case "sendgrid":
@@ -103,8 +106,9 @@ func sendEmail(r model.Request, consulClient *consul.Client) error {
 		if v == "" {
 			v, _ = toolkit.GetConsulValueFromKey(consulClient, "sendgrid")
 		}
-		sendgrid := email.SendGrid.New(v)
-		return sendgrid.Send()
+
+		sendgrid := emailer.NewSendgrid(v)
+		return sendgrid.SendSendgrid(v, &r)
 	case "mailgun":
 		v := os.Getenv("MAILGUN")
 		if v == "" {
@@ -117,8 +121,8 @@ func sendEmail(r model.Request, consulClient *consul.Client) error {
 			return err
 		}
 
-		mailgun := email.Mailgun.New(value.Domain, value.APIKey, value.PublicKey)
-		return mailgun.Send(value.Domain, r.Payload.Content, r.Payload.To.Email)
+		mailgun := emailer.NewMailgun(value.Domain, value.APIKey, value.PublicKey)
+		return mailgun.SendMailgun(value.Domain, r.Payload.Content, r.Payload.To.Email)
 	default:
 		return errors.New("INVALID_PROVIDER")
 	}
