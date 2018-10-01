@@ -47,21 +47,7 @@ func configHandler(s service.Service, endpoints endpoints.Endpoints, logger log.
 
 	// TODO: Add authorization for all endpoints
 
-	// endpoints
-	r.Route("/organizations", func(r chi.Router) {
-		r.Post("/", httptransport.NewServer(
-			endpoints.CreateOrganization,
-			DecodeCreateOrganizationRequest,
-			encodeResponse,
-			options...,
-		).ServeHTTP)
-		r.Put("/", httptransport.NewServer(
-			endpoints.UpdateOrganization,
-			DecodeUpdateOrganizationRequest,
-			encodeResponse,
-			options...,
-		).ServeHTTP)
-	})
+	ConfigOrganizationRouter(r, endpoints, options)
 
 	return r
 }
