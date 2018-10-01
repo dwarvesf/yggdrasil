@@ -12,6 +12,7 @@ import (
 	"github.com/dwarvesf/yggdrasil/organization/endpoints"
 	"github.com/dwarvesf/yggdrasil/organization/middlewares"
 	"github.com/dwarvesf/yggdrasil/organization/service"
+	"github.com/dwarvesf/yggdrasil/organization/service/group"
 	"github.com/dwarvesf/yggdrasil/organization/service/organization"
 )
 
@@ -22,6 +23,10 @@ func NewHTTPHandler(pgdb *gorm.DB, logger log.Logger, useCORS bool) http.Handler
 			organization.NewPGService(pgdb),
 			organization.ValidationMiddleware(),
 		).(organization.Service),
+		GroupService: middlewares.Compose(
+			group.NewPGService(pgdb),
+			group.ValidationMiddleware(),
+		).(group.Service),
 	}
 
 	return configHandler(s, endpoints.MakeServerEndpoints(s), logger, useCORS)
@@ -48,6 +53,7 @@ func configHandler(s service.Service, endpoints endpoints.Endpoints, logger log.
 	// TODO: Add authorization for all endpoints
 
 	ConfigOrganizationRouter(r, endpoints, options)
+	ConfigGroupRouter(r, endpoints, options)
 
 	return r
 }
