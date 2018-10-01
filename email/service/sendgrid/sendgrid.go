@@ -1,6 +1,7 @@
 package sendgrid
 
 import (
+	"github.com/dwarvesf/yggdrasil/email/service"
 	sg "github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 
@@ -9,24 +10,28 @@ import (
 
 //Sendgrid struct contains a Client struct
 type Sendgrid struct {
-	c sg.Client
+	apiKey string
+	p      *model.Payload
 }
 
 // New returns a SendGridClient struct
-func New(apiKey string) Sendgrider {
-	return Sendgrid{c: *sg.NewSendClient(apiKey)}
+func New(apiKey string, p *model.Payload) email.Emailer {
+	return &Sendgrid{
+		apiKey: apiKey,
+		p:      p,
+	}
 }
 
 // Send sends an email via sendgrid
-func (sc Sendgrid) Send(apiKey string, req *model.Request) error {
+func (sc *Sendgrid) Send(apiKey string, p *model.Payload) error {
 	m := mail.NewV3Mail()
 
-	fromName := req.Payload.From.Name
+	fromName := p.From.Name
 	if fromName == "" {
 		return ErrNameIsRequired
 	}
 
-	fromEmail := req.Payload.From.Email
+	fromEmail := p.From.Email
 	if fromEmail == "" {
 		return ErrEmailIsRequired
 	}
@@ -34,22 +39,22 @@ func (sc Sendgrid) Send(apiKey string, req *model.Request) error {
 	from := mail.NewEmail(fromName, fromEmail)
 	m.SetFrom(from)
 
-	p := mail.NewPersonalization()
+	person := mail.NewPersonalization()
 
-	if req.Payload.TemplateID == "" {
-		c := mail.NewContent("text/plain", req.Payload.Content)
+	if p.TemplateID == "" {
+		c := mail.NewContent("text/plain", p.Content)
 		m.AddContent(c)
 	}
 
-	m.SetTemplateID(req.Payload.TemplateID)
-	p.SetDynamicTemplateData("data", req.Payload.Data)
+	m.SetTemplateID(p.TemplateID)
+	person.SetDynamicTemplateData("data", p.Data)
 
-	toName := req.Payload.To.Name
+	toName := p.To.Name
 	if toName == "" {
 		return ErrNameIsRequired
 	}
 
-	toEmail := req.Payload.To.Email
+	toEmail := p.To.Email
 	if toEmail == "" {
 		return ErrEmailIsRequired
 	}
@@ -57,8 +62,8 @@ func (sc Sendgrid) Send(apiKey string, req *model.Request) error {
 	tos := []*mail.Email{
 		mail.NewEmail(toName, toEmail),
 	}
-	p.AddTos(tos...)
-	m.AddPersonalizations(p)
+	person.AddTos(tos...)
+	m.AddPersonalizations(person)
 
 	body := mail.GetRequestBody(m)
 	request := sg.GetRequest(apiKey, "v3/mail/send", "https://api.sendgrid.com")
