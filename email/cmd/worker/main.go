@@ -9,10 +9,9 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/k0kubun/pp"
-
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
+	"github.com/k0kubun/pp"
 
 	"github.com/dwarvesf/yggdrasil/email/model"
 	email "github.com/dwarvesf/yggdrasil/email/service"
@@ -109,6 +108,7 @@ func sendEmail(r model.Request, consulClient *consul.Client) error {
 
 		sendgrid := emailer.NewSendgrid(v)
 		return sendgrid.SendSendgrid(v, &r)
+
 	case "mailgun":
 		v := os.Getenv("MAILGUN")
 		if v == "" {
@@ -123,6 +123,7 @@ func sendEmail(r model.Request, consulClient *consul.Client) error {
 
 		mailgun := emailer.NewMailgun(value.Domain, value.APIKey, value.PublicKey)
 		return mailgun.SendMailgun(value.Domain, r.Payload.Content, r.Payload.To.Email)
+
 	default:
 		return errors.New("INVALID_PROVIDER")
 	}

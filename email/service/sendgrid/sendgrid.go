@@ -1,10 +1,10 @@
 package sendgrid
 
 import (
-	"github.com/dwarvesf/yggdrasil/email/model"
-
 	sg "github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
+
+	"github.com/dwarvesf/yggdrasil/email/model"
 )
 
 //Client struct contains a Client struct
