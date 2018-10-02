@@ -274,7 +274,7 @@ func TestWhenUpdateOrganizationSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	if res.ID != org.ID {
-		t.Errorf("Expect Name to be test, but got %+v", res.Name)
+		t.Errorf("Expect ID to be %+v, but got %+v", org.ID, res.Name)
 	}
 	if res.Name != "test" {
 		t.Errorf("Expect Name to be test, but got %+v", res.Name)
