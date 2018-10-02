@@ -2,17 +2,17 @@ package endpoints
 
 import "net/http"
 
+// Endpoint errors
 var (
-	//ErrorInvalidLogin return login fail message
-	ErrorInvalidLogin = errInvalidLogin{}
+	ErrorMissingID = errMissingID{}
 )
 
-type errInvalidLogin struct{}
+type errMissingID struct{}
 
-func (errInvalidLogin) Error() string {
-	return "User name and password is invalid"
+func (errMissingID) Error() string {
+	return "MISSING_ID"
 }
 
-func (errInvalidLogin) StatusCode() int {
+func (errMissingID) StatusCode() int {
 	return http.StatusUnauthorized
 }
