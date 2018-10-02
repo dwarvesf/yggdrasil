@@ -24,14 +24,14 @@ func DecodeUpdateOrganizationRequest(_ context.Context, r *http.Request) (interf
 
 // DecodeCreateGroupRequest ...
 func DecodeCreateGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req endpoints.CreateOrganizationRequest
+	var req endpoints.CreateGroupRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	return req, err
 }
 
 // DecodeUpdateGroupRequest ...
 func DecodeUpdateGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req endpoints.UpdateOrganizationRequest
+	var req endpoints.UpdateGroupRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	return req, err
 }

@@ -11,6 +11,7 @@ type pgService struct {
 	db *gorm.DB
 }
 
+// NewPGService ...
 func NewPGService(db *gorm.DB) Service {
 	return &pgService{
 		db: db,
@@ -26,10 +27,6 @@ func (s *pgService) Create(g *model.Group) (*model.Group, error) {
 }
 
 func (s *pgService) Update(g *model.Group) (*model.Group, error) {
-	if err := s.checkOrganization(g.OrganizationID); err != nil {
-		return nil, err
-	}
-
 	err := s.db.Model(&model.Group{}).
 		Where("id = ?", g.ID).
 		Updates(g).
