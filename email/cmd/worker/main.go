@@ -105,9 +105,8 @@ func sendEmail(r model.Request, consulClient *consul.Client) error {
 		if v == "" {
 			v, _ = toolkit.GetConsulValueFromKey(consulClient, "sendgrid")
 		}
-
-		sendgrid.New(v, &r.Payload)
-		return emailer.Send(v, &r.Payload)
+		emailer = sendgrid.New(v)
+		return emailer.Send(&r.Payload)
 
 	case "mailgun":
 		v := os.Getenv("MAILGUN")
@@ -121,8 +120,8 @@ func sendEmail(r model.Request, consulClient *consul.Client) error {
 			return err
 		}
 
-		mailgun.New(value.Domain, value.APIKey, value.PublicKey)
-		return emailer.Send(value.APIKey, &r.Payload)
+		emailer = mailgun.New(value.Domain, value.APIKey, value.PublicKey)
+		return emailer.Send(&r.Payload)
 
 	default:
 		return errors.New("INVALID_PROVIDER")

@@ -1,29 +1,27 @@
 package sendgrid
 
 import (
-	"github.com/dwarvesf/yggdrasil/email/service"
 	sg "github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
 
 	"github.com/dwarvesf/yggdrasil/email/model"
+	"github.com/dwarvesf/yggdrasil/email/service"
 )
 
 //Sendgrid struct contains a Client struct
 type Sendgrid struct {
 	apiKey string
-	p      *model.Payload
 }
 
 // New returns a SendGridClient struct
-func New(apiKey string, p *model.Payload) email.Emailer {
+func New(apiKey string) email.Emailer {
 	return &Sendgrid{
 		apiKey: apiKey,
-		p:      p,
 	}
 }
 
 // Send sends an email via sendgrid
-func (sc *Sendgrid) Send(apiKey string, p *model.Payload) error {
+func (sc *Sendgrid) Send(p *model.Payload) error {
 	m := mail.NewV3Mail()
 
 	fromName := p.From.Name
@@ -66,7 +64,7 @@ func (sc *Sendgrid) Send(apiKey string, p *model.Payload) error {
 	m.AddPersonalizations(person)
 
 	body := mail.GetRequestBody(m)
-	request := sg.GetRequest(apiKey, "v3/mail/send", "https://api.sendgrid.com")
+	request := sg.GetRequest(sc.apiKey, "v3/mail/send", "https://api.sendgrid.com")
 	request.Method = "POST"
 	request.Body = body
 

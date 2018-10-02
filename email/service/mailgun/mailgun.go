@@ -1,9 +1,10 @@
 package mailgun
 
 import (
+	mailgun "github.com/mailgun/mailgun-go"
+
 	"github.com/dwarvesf/yggdrasil/email/model"
 	"github.com/dwarvesf/yggdrasil/email/service"
-	mailgun "github.com/mailgun/mailgun-go"
 )
 
 //Mailgun contain mailgun client
@@ -19,7 +20,7 @@ func New(domain, apiKey, pubKey string) email.Emailer {
 }
 
 //Send mail via mailgun service
-func (mg Mailgun) Send(apiKey string, p *model.Payload) error {
+func (mg Mailgun) Send(p *model.Payload) error {
 	message := mg.m.NewMessage(p.From.Email, "", p.Content, p.To.Email)
 	_, _, err := mg.m.Send(message)
 	return err
