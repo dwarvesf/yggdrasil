@@ -1,12 +1,8 @@
 package email
 
-import (
-	"github.com/dwarvesf/yggdrasil/email/service/mailgun"
-	"github.com/dwarvesf/yggdrasil/email/service/sendgrid"
-)
+import "github.com/dwarvesf/yggdrasil/email/model"
 
-//Email contain send method
-type Email struct {
-	SendGrid sendgrid.SendGrider
-	Mailgun  mailgun.Mailguner
+//Emailer contain send method
+type Emailer interface {
+	Send(p *model.Payload) error
 }

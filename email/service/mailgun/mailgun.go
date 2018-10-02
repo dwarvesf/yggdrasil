@@ -2,27 +2,26 @@ package mailgun
 
 import (
 	mailgun "github.com/mailgun/mailgun-go"
+
+	"github.com/dwarvesf/yggdrasil/email/model"
+	"github.com/dwarvesf/yggdrasil/email/service"
 )
 
-//Mailguner contain method to send email via mailgun
-type Mailguner interface {
-	New(domain, privateAPIKey, publicValidationKey string) *Client
-	Send(sender, subject, body, recipient string) error
-}
-
-//Client contain mailgun client
-type Client struct {
+//Mailgun contain mailgun client
+type Mailgun struct {
 	m mailgun.Mailgun
 }
 
 //New crete new mailgun client
-func New(domain, privateAPIKey, publicValidationKey string) *Client {
-	return &Client{m: mailgun.NewMailgun(domain, privateAPIKey, publicValidationKey)}
+func New(domain, apiKey, pubKey string) email.Emailer {
+	return &Mailgun{
+		m: mailgun.NewMailgun(domain, apiKey, pubKey),
+	}
 }
 
 //Send mail via mailgun service
-func (mg Client) Send(sender, body, recipient string) error {
-	message := mg.m.NewMessage(sender, "", body, recipient)
+func (mg Mailgun) Send(p *model.Payload) error {
+	message := mg.m.NewMessage(p.From.Email, "", p.Content, p.To.Email)
 	_, _, err := mg.m.Send(message)
 	return err
 }
