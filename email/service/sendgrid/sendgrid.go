@@ -22,7 +22,6 @@ func New(apiKey string) email.Emailer {
 
 // Send sends an email via sendgrid
 func (sc *Sendgrid) Send(p *model.Payload) error {
-	m := mail.NewV3Mail()
 
 	fromName := p.From.Name
 	if fromName == "" {
@@ -34,19 +33,6 @@ func (sc *Sendgrid) Send(p *model.Payload) error {
 		return ErrEmailIsRequired
 	}
 
-	from := mail.NewEmail(fromName, fromEmail)
-	m.SetFrom(from)
-
-	person := mail.NewPersonalization()
-
-	if p.TemplateID == "" {
-		c := mail.NewContent("text/plain", p.Content)
-		m.AddContent(c)
-	}
-
-	m.SetTemplateID(p.TemplateID)
-	person.SetDynamicTemplateData("data", p.Data)
-
 	toName := p.To.Name
 	if toName == "" {
 		return ErrNameIsRequired
@@ -57,9 +43,25 @@ func (sc *Sendgrid) Send(p *model.Payload) error {
 		return ErrEmailIsRequired
 	}
 
+	m := mail.NewV3Mail()
+
+	from := mail.NewEmail(fromName, fromEmail)
+	m.SetFrom(from)
+
+	person := mail.NewPersonalization()
+
+	if p.TemplateID == "" {
+		c := mail.NewContent("text/plain", p.Content)
+		m.AddContent(c)
+	} else {
+		m.SetTemplateID(p.TemplateID)
+		person.SetDynamicTemplateData("data", p.Data)
+	}
+
 	tos := []*mail.Email{
 		mail.NewEmail(toName, toEmail),
 	}
+
 	person.AddTos(tos...)
 	m.AddPersonalizations(person)
 
