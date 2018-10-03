@@ -178,3 +178,41 @@ func VerifyTokenEndpoints(s service.Service) endpoint.Endpoint {
 		return VerifyTokenResponse{"ok"}, nil
 	}
 }
+
+type ReferralRequset struct {
+	// ...
+}
+
+type ReferralReponse struct {
+	// ...
+}
+
+func ReferralUser(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// req := request.(ReferralRequset)
+
+		// TODO: logic giống như cái register 1 user
+		// Có thể invite = email, sdt
+		// Data trả về là 1 cái referral code
+
+		return nil, nil
+	}
+}
+
+type ResponseReferralRequset struct {
+	// ...
+}
+
+type ResponseReferralReponse struct {
+	// ...
+}
+
+func ResponseReferral(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		// TODO: user sẽ điển password (required), metadata (optional)
+		// active user này
+		// return ra 1 cái jwt token
+
+		return nil, nil
+	}
+}

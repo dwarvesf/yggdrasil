@@ -25,16 +25,17 @@ const (
 //User status 0 is inactive, 1 is active
 //When login, check username, password valid, and check Status be must active
 type User struct {
-	ID          uuid.UUID      `json:"id" gorm:"not null"`
-	Email       string         `json:"email" gorm:"default:''"`
-	Username    string         `json:"username" gorm:"default:''"`
-	PhoneNumber string         `json:"phone_number" gorm:"default:''"`
-	LoginType   LoginType      `json:"login_type"`
-	Password    string         `json:"password" gorm:"default:''"`
-	Salt        string         `json:"salt" gorm:"default:''"`
-	Status      UserStatus     `json:"status" gorm:"default:'1'"`
-	Info        postgres.Jsonb `json:"info" gorm:"type:jsonb"`
-	Token       string         `json:"token"`
+	ID           uuid.UUID      `json:"id" gorm:"not null"`
+	Email        string         `json:"email" gorm:"default:''"`
+	Username     string         `json:"username" gorm:"default:''"`
+	PhoneNumber  string         `json:"phone_number" gorm:"default:''"`
+	LoginType    LoginType      `json:"login_type"`
+	Password     string         `json:"password" gorm:"default:''"`
+	Salt         string         `json:"salt" gorm:"default:''"`
+	Status       UserStatus     `json:"status" gorm:"default:'1'"`
+	Info         postgres.Jsonb `json:"info" gorm:"type:jsonb"`
+	Token        string         `json:"token"`
+	ReferralCode string         `json:"referral_code"`
 }
 
 //BeforeCreate genergrate userID before add user
