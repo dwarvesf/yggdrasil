@@ -181,6 +181,9 @@ func VerifyTokenEndpoints(s service.Service) endpoint.Endpoint {
 
 type ReferralRequset struct {
 	// ...
+	// from_user_id
+	// to_user_email
+	// metadata
 }
 
 type ReferralReponse struct {
@@ -191,8 +194,9 @@ func ReferralUser(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		// req := request.(ReferralRequset)
 
-		// TODO: logic giống như cái register 1 user
-		// Có thể invite = email, sdt
+		// TODO:
+		// Tạo 1 table mới tên `referral_requests`
+		// Sau khi nhận dc request thì tạo 1 record trong db
 		// Data trả về là 1 cái referral code
 
 		return nil, nil
@@ -209,8 +213,9 @@ type ResponseReferralReponse struct {
 
 func ResponseReferral(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		// TODO: user sẽ điển password (required), metadata (optional)
-		// active user này
+		// TODO: user sẽ điển info của mình
+		// tạo 1 record, active cho user này
+		// delete cái referral code trong table `refeerral_requests`
 		// return ra 1 cái jwt token
 
 		return nil, nil
