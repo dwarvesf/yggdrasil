@@ -43,6 +43,7 @@ func GetDB() *gorm.DB {
 }
 
 func clearDB(pgdb *gorm.DB) {
+	pgdb.Exec("DELETE FROM user_groups")
 	pgdb.Exec("DELETE FROM groups")
 	pgdb.Exec("DELETE FROM organizations")
 }

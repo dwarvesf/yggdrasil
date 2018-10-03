@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-kit/kit/endpoint"
 	uuid "github.com/satori/go.uuid"
@@ -86,6 +87,144 @@ func UpdateGroupEndpoint(s service.Service) endpoint.Endpoint {
 				Status:   uint8(g.Status),
 				Metadata: g.Metadata,
 			}, nil
+		}
+
+		return nil, ErrorMissingID
+	}
+}
+
+// JoinGroupRequest ...
+type JoinGroupRequest struct {
+	UserID uuid.UUID `json:"user_id,omitempty"`
+}
+
+// JoinGroupResponse ...
+type JoinGroupResponse struct {
+	Status string `json:"status"`
+}
+
+// JoinGroupEndpoint ...
+func JoinGroupEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID); ok {
+			req := request.(JoinGroupRequest)
+			ug := &model.UserGroups{
+				GroupID: groupID,
+				UserID:  req.UserID,
+			}
+
+			err := s.GroupService.Join(ug)
+			if err != nil {
+				return nil, err
+			}
+
+			return JoinGroupResponse{Status: "success"}, nil
+		}
+
+		return nil, ErrorMissingID
+	}
+}
+
+// LeaveGroupRequest ...
+type LeaveGroupRequest struct {
+	UserID uuid.UUID `json:"user_id,omitempty"`
+}
+
+// LeaveGroupResponse ...
+type LeaveGroupResponse struct {
+	Status string `json:"status"`
+}
+
+// LeaveGroupEndpoint ...
+func LeaveGroupEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID); ok {
+			req := request.(LeaveGroupRequest)
+			now := time.Now()
+			ug := &model.UserGroups{
+				GroupID: groupID,
+				UserID:  req.UserID,
+				LeftAt:  &now,
+			}
+
+			err := s.GroupService.Leave(ug)
+			if err != nil {
+				return nil, err
+			}
+
+			return LeaveGroupResponse{Status: "success"}, nil
+		}
+
+		return nil, ErrorMissingID
+	}
+}
+
+// InviteUserRequest ...
+type InviteUserRequest struct {
+	UserID   uuid.UUID `json:"user_id,omitempty"`
+	FromUser uuid.UUID `json:"from_id,omitempty"`
+}
+
+// InviteUserResponse ...
+type InviteUserResponse struct {
+	Status string `json:"status"`
+}
+
+// InviteUserEndpoint ...
+func InviteUserEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID); ok {
+			req := request.(InviteUserRequest)
+			now := time.Now()
+			ug := &model.UserGroups{
+				GroupID:   groupID,
+				UserID:    req.UserID,
+				InvitedBy: &req.FromUser,
+				InvitedAt: &now,
+			}
+
+			err := s.GroupService.Join(ug)
+			if err != nil {
+				return nil, err
+			}
+
+			return InviteUserResponse{Status: "success"}, nil
+		}
+
+		return nil, ErrorMissingID
+	}
+}
+
+// KickUserRequest ...
+type KickUserRequest struct {
+	UserID   uuid.UUID `json:"user_id,omitempty"`
+	FromUser uuid.UUID `json:"from_id,omitempty"`
+}
+
+// KickUserResponse ...
+type KickUserResponse struct {
+	Status string `json:"status"`
+}
+
+// KickUserEndpoint ...
+func KickUserEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		if groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID); ok {
+			req := request.(KickUserRequest)
+			now := time.Now()
+			ug := &model.UserGroups{
+				GroupID:  groupID,
+				UserID:   req.UserID,
+				KickedBy: &req.FromUser,
+				KickedAt: &now,
+			}
+
+			err := s.GroupService.Leave(ug)
+			if err != nil {
+				return nil, err
+			}
+
+			return KickUserResponse{Status: "success"}, nil
 		}
 
 		return nil, ErrorMissingID
