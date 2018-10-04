@@ -29,6 +29,36 @@ func ConfigGroupRouter(r chi.Router, endpoints endpoints.Endpoints, options []ht
 				encodeResponse,
 				options...,
 			).ServeHTTP)
+			r.Post("/archive", httptransport.NewServer(
+				endpoints.ArchiveGroup,
+				DecodeArchiveGroupRequest,
+				encodeResponse,
+				options...,
+			).ServeHTTP)
+			r.Post("/join", httptransport.NewServer(
+				endpoints.JoinGroup,
+				DecodeJoinGroupRequest,
+				encodeResponse,
+				options...,
+			).ServeHTTP)
+			r.Post("/leave", httptransport.NewServer(
+				endpoints.LeaveGroup,
+				DecodeLeaveGroupRequest,
+				encodeResponse,
+				options...,
+			).ServeHTTP)
+			r.Post("/invite_user", httptransport.NewServer(
+				endpoints.InviteUser,
+				DecodeInviteUserRequest,
+				encodeResponse,
+				options...,
+			).ServeHTTP)
+			r.Post("/kick_user", httptransport.NewServer(
+				endpoints.KickUser,
+				DecodeKickUserRequest,
+				encodeResponse,
+				options...,
+			).ServeHTTP)
 		})
 	})
 }

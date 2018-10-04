@@ -35,3 +35,38 @@ func DecodeUpdateGroupRequest(_ context.Context, r *http.Request) (interface{}, 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	return req, err
 }
+
+// DecodeArchiveGroupRequest ...
+func DecodeArchiveGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.ArchiveGroupRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+// DecodeJoinGroupRequest ...
+func DecodeJoinGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.JoinGroupRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+// DecodeLeaveGroupRequest ...
+func DecodeLeaveGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.LeaveGroupRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+// DecodeInviteUserRequest ...
+func DecodeInviteUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.InviteUserRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+// DecodeKickUserRequest ...
+func DecodeKickUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.KickUserRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}

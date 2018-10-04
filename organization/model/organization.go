@@ -10,8 +10,8 @@ import (
 type OrganizationStatus uint8
 
 const (
-	OrganizationStatusInactive OrganizationStatus = iota + 1
-	OrganizationStatusActive
+	OrganizationStatusActive OrganizationStatus = iota + 1
+	OrganizationStatusInactive
 )
 
 // Organization status 0 is inactive, 1 is active
