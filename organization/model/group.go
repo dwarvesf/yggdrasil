@@ -12,7 +12,13 @@ type GroupStatus uint8
 const (
 	GroupStatusActive GroupStatus = iota + 1
 	GroupStatusInactive
+	end
 )
+
+// IsValid ...
+func (s GroupStatus) IsValid() bool {
+	return s >= 1 && s < end
+}
 
 // Group status 0 is inactive, 1 is active
 type Group struct {

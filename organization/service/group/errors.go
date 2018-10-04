@@ -6,11 +6,22 @@ import "net/http"
 var (
 	ErrNameEmpty      = errNameEmpty{}
 	ErrNotFound       = errNotFound{}
+	ErrInvalidStatus  = errInvalidStatus{}
 	ErrAlreadyJoined  = errAlreadyJoined{}
 	ErrHasNotJoined   = errHasNotJoined{}
 	ErrOrgNotFound    = errOrgNotFound{}
 	ErrGroupNotActive = errGroupNotActive{}
 )
+
+type errInvalidStatus struct{}
+
+func (errInvalidStatus) Error() string {
+	return "INVALID_STATUS"
+}
+
+func (errInvalidStatus) StatusCode() int {
+	return http.StatusBadRequest
+}
 
 type errAlreadyJoined struct{}
 

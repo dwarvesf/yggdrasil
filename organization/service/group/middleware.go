@@ -41,6 +41,14 @@ func (mw validationMiddleware) Update(g *model.Group) (*model.Group, error) {
 	return mw.Service.Update(g)
 }
 
+func (mw validationMiddleware) Archive(g *model.Group) (*model.Group, error) {
+	if !g.Status.IsValid() {
+		return nil, ErrInvalidStatus
+	}
+
+	return mw.Service.Archive(g)
+}
+
 func (mw validationMiddleware) Join(ug *model.UserGroups) error {
 	return mw.Service.Join(ug)
 }

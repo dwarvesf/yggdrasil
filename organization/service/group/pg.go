@@ -63,6 +63,10 @@ func (s *pgService) Create(g *model.Group) (*model.Group, error) {
 	return g, s.db.Create(g).Error
 }
 
+func (s *pgService) Archive(g *model.Group) (*model.Group, error) {
+	return s.Update(g)
+}
+
 func (s *pgService) Update(g *model.Group) (*model.Group, error) {
 	err := s.db.Model(&model.Group{}).
 		Where("id = ?", g.ID).

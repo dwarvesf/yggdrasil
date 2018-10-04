@@ -29,6 +29,12 @@ func ConfigGroupRouter(r chi.Router, endpoints endpoints.Endpoints, options []ht
 				encodeResponse,
 				options...,
 			).ServeHTTP)
+			r.Post("/archive", httptransport.NewServer(
+				endpoints.ArchiveGroup,
+				DecodeArchiveGroupRequest,
+				encodeResponse,
+				options...,
+			).ServeHTTP)
 			r.Post("/join", httptransport.NewServer(
 				endpoints.JoinGroup,
 				DecodeJoinGroupRequest,

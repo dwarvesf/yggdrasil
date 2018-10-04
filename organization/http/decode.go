@@ -36,6 +36,13 @@ func DecodeUpdateGroupRequest(_ context.Context, r *http.Request) (interface{}, 
 	return req, err
 }
 
+// DecodeArchiveGroupRequest ...
+func DecodeArchiveGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.ArchiveGroupRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
 // DecodeJoinGroupRequest ...
 func DecodeJoinGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.JoinGroupRequest

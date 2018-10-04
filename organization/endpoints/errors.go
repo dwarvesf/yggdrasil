@@ -14,5 +14,5 @@ func (errMissingID) Error() string {
 }
 
 func (errMissingID) StatusCode() int {
-	return http.StatusUnauthorized
+	return http.StatusBadRequest
 }

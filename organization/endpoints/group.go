@@ -68,28 +68,67 @@ type UpdateGroupResponse struct {
 // UpdateGroupEndpoint ...
 func UpdateGroupEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID); ok {
-			req := request.(UpdateGroupRequest)
-			g := &model.Group{
-				ID:       groupID,
-				Name:     req.Name,
-				Metadata: req.Metadata,
-			}
-
-			g, err := s.GroupService.Update(g)
-			if err != nil {
-				return nil, err
-			}
-
-			return UpdateGroupResponse{
-				ID:       g.ID,
-				Name:     g.Name,
-				Status:   uint8(g.Status),
-				Metadata: g.Metadata,
-			}, nil
+		groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
 		}
 
-		return nil, ErrorMissingID
+		req := request.(UpdateGroupRequest)
+		g := &model.Group{
+			ID:       groupID,
+			Name:     req.Name,
+			Metadata: req.Metadata,
+		}
+
+		g, err := s.GroupService.Update(g)
+		if err != nil {
+			return nil, err
+		}
+
+		return UpdateGroupResponse{
+			ID:       g.ID,
+			Name:     g.Name,
+			Status:   uint8(g.Status),
+			Metadata: g.Metadata,
+		}, nil
+	}
+}
+
+// ArchiveGroupRequest ...
+type ArchiveGroupRequest struct{}
+
+// ArchiveGroupResponse ...
+type ArchiveGroupResponse struct {
+	ID       uuid.UUID      `json:"id"`
+	Name     string         `json:"name"`
+	Status   uint8          `json:"status"`
+	Metadata model.Metadata `json:"metadata"`
+}
+
+// ArchiveGroupEndpoint ...
+func ArchiveGroupEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
+		}
+
+		g := &model.Group{
+			ID:     groupID,
+			Status: model.GroupStatusInactive,
+		}
+
+		g, err := s.GroupService.Archive(g)
+		if err != nil {
+			return nil, err
+		}
+
+		return ArchiveGroupResponse{
+			ID:       g.ID,
+			Name:     g.Name,
+			Status:   uint8(g.Status),
+			Metadata: g.Metadata,
+		}, nil
 	}
 }
 
@@ -106,22 +145,23 @@ type JoinGroupResponse struct {
 // JoinGroupEndpoint ...
 func JoinGroupEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID); ok {
-			req := request.(JoinGroupRequest)
-			ug := &model.UserGroups{
-				GroupID: groupID,
-				UserID:  req.UserID,
-			}
-
-			err := s.GroupService.Join(ug)
-			if err != nil {
-				return nil, err
-			}
-
-			return JoinGroupResponse{Status: "success"}, nil
+		groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
 		}
 
-		return nil, ErrorMissingID
+		req := request.(JoinGroupRequest)
+		ug := &model.UserGroups{
+			GroupID: groupID,
+			UserID:  req.UserID,
+		}
+
+		err := s.GroupService.Join(ug)
+		if err != nil {
+			return nil, err
+		}
+
+		return JoinGroupResponse{Status: "success"}, nil
 	}
 }
 
@@ -138,24 +178,25 @@ type LeaveGroupResponse struct {
 // LeaveGroupEndpoint ...
 func LeaveGroupEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID); ok {
-			req := request.(LeaveGroupRequest)
-			now := time.Now()
-			ug := &model.UserGroups{
-				GroupID: groupID,
-				UserID:  req.UserID,
-				LeftAt:  &now,
-			}
-
-			err := s.GroupService.Leave(ug)
-			if err != nil {
-				return nil, err
-			}
-
-			return LeaveGroupResponse{Status: "success"}, nil
+		groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
 		}
 
-		return nil, ErrorMissingID
+		req := request.(LeaveGroupRequest)
+		now := time.Now()
+		ug := &model.UserGroups{
+			GroupID: groupID,
+			UserID:  req.UserID,
+			LeftAt:  &now,
+		}
+
+		err := s.GroupService.Leave(ug)
+		if err != nil {
+			return nil, err
+		}
+
+		return LeaveGroupResponse{Status: "success"}, nil
 	}
 }
 
@@ -173,25 +214,26 @@ type InviteUserResponse struct {
 // InviteUserEndpoint ...
 func InviteUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID); ok {
-			req := request.(InviteUserRequest)
-			now := time.Now()
-			ug := &model.UserGroups{
-				GroupID:   groupID,
-				UserID:    req.UserID,
-				InvitedBy: &req.FromUser,
-				InvitedAt: &now,
-			}
-
-			err := s.GroupService.Join(ug)
-			if err != nil {
-				return nil, err
-			}
-
-			return InviteUserResponse{Status: "success"}, nil
+		groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
 		}
 
-		return nil, ErrorMissingID
+		req := request.(InviteUserRequest)
+		now := time.Now()
+		ug := &model.UserGroups{
+			GroupID:   groupID,
+			UserID:    req.UserID,
+			InvitedBy: &req.FromUser,
+			InvitedAt: &now,
+		}
+
+		err := s.GroupService.Join(ug)
+		if err != nil {
+			return nil, err
+		}
+
+		return InviteUserResponse{Status: "success"}, nil
 	}
 }
 
@@ -209,24 +251,25 @@ type KickUserResponse struct {
 // KickUserEndpoint ...
 func KickUserEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID); ok {
-			req := request.(KickUserRequest)
-			now := time.Now()
-			ug := &model.UserGroups{
-				GroupID:  groupID,
-				UserID:   req.UserID,
-				KickedBy: &req.FromUser,
-				KickedAt: &now,
-			}
-
-			err := s.GroupService.Leave(ug)
-			if err != nil {
-				return nil, err
-			}
-
-			return KickUserResponse{Status: "success"}, nil
+		groupID, ok := ctx.Value(util.GroupIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
 		}
 
-		return nil, ErrorMissingID
+		req := request.(KickUserRequest)
+		now := time.Now()
+		ug := &model.UserGroups{
+			GroupID:  groupID,
+			UserID:   req.UserID,
+			KickedBy: &req.FromUser,
+			KickedAt: &now,
+		}
+
+		err := s.GroupService.Leave(ug)
+		if err != nil {
+			return nil, err
+		}
+
+		return KickUserResponse{Status: "success"}, nil
 	}
 }
