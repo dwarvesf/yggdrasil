@@ -7,6 +7,7 @@ import (
 	"github.com/dwarvesf/yggdrasil/identity/model"
 	"github.com/dwarvesf/yggdrasil/identity/util/testutil"
 	"github.com/jinzhu/gorm"
+
 	uuid "github.com/satori/go.uuid"
 )
 
