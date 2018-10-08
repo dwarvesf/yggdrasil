@@ -18,6 +18,7 @@ import (
 	serviceHttp "github.com/dwarvesf/yggdrasil/identity/http"
 	"github.com/dwarvesf/yggdrasil/identity/middlewares"
 	"github.com/dwarvesf/yggdrasil/identity/service"
+	"github.com/dwarvesf/yggdrasil/identity/service/referral"
 	"github.com/dwarvesf/yggdrasil/identity/service/user"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 )
@@ -61,6 +62,10 @@ func main() {
 				user.NewPGService(pgdb),
 				user.ValidationMiddleware(),
 			).(user.Service),
+			ReferrService: middlewares.Compose(
+				referral.NewPGService(pgdb),
+				referral.ValidationMiddleware(),
+			).(referral.Service),
 		}
 	}
 

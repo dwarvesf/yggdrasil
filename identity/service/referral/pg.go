@@ -1,0 +1,48 @@
+package referral
+
+import (
+	"github.com/dwarvesf/yggdrasil/identity/model"
+	"github.com/jinzhu/gorm"
+)
+
+type pgService struct {
+	db *gorm.DB
+}
+
+//NewPGService ...
+func NewPGService(db *gorm.DB) Service {
+	return &pgService{
+		db: db,
+	}
+}
+
+func (s *pgService) Save(o *model.Referral) error {
+	db := s.db.Where("from_user_id = ?", o.FromUserID).Where("to_user_email = ?", o.ToUserEmail)
+	res := []model.Referral{}
+
+	if err := db.Find(&res).Error; err != nil {
+		return err
+	}
+	if err := db.Delete(&res).Error; err != nil {
+		return err
+	}
+
+	return s.db.Create(o).Error
+}
+
+func (s *pgService) DeleteReferralWithCode(code string) error {
+	res := model.Referral{}
+	return s.db.Where("code = ?", code).Delete(&res).Error
+}
+
+func (s *pgService) Get(q *Query) (model.Referral, error) {
+	res := model.Referral{}
+	db := s.db
+
+	if q.Code != "" {
+		db = db.Where("code = ?", q.Code)
+	}
+
+	err := db.First(&res).Error
+	return res, err
+}

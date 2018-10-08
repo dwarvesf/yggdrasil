@@ -19,6 +19,7 @@ type PG struct {
 
 // Migrate use to migrate database
 func Migrate(db *gorm.DB) {
+	db.AutoMigrate(&model.Referral{})
 	db.AutoMigrate(&model.User{})
 }
 

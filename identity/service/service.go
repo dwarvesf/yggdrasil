@@ -1,10 +1,12 @@
 package service
 
 import (
+	"github.com/dwarvesf/yggdrasil/identity/service/referral"
 	"github.com/dwarvesf/yggdrasil/identity/service/user"
 )
 
 // Service ...
 type Service struct {
-	UserService user.Service
+	UserService   user.Service
+	ReferrService referral.Service
 }

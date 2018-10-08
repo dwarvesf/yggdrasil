@@ -34,7 +34,9 @@ const (
 )
 
 func MigrateTable(db *gorm.DB) error {
-	return db.CreateTable(model.User{}).Error
+	db.CreateTable(model.User{})
+	db.CreateTable(model.Referral{})
+	return nil
 }
 
 func CreateSampleData(db *gorm.DB) error {
@@ -46,7 +48,17 @@ func CreateSampleData(db *gorm.DB) error {
 		Password:  "123",
 		Status:    2,
 	}
-	return db.Create(&user).Error
+
+	referral := model.Referral{
+		ID:          uuid,
+		Code:        "123456",
+		FromUserID:  uuid,
+		ToUserEmail: "meocon@meocon.org",
+	}
+
+	db.Create(&user)
+	db.Create(&referral)
+	return nil
 }
 
 // CreateTestDatabase will create a test-database and test-schema

@@ -66,6 +66,10 @@ func (mw validationMiddleware) Save(r *model.User) (err error) {
 		return ErrUsernameEmpty
 	}
 
+	if r.Password == "" {
+		return ErrPasswordEmpty
+	}
+
 	_, errX := mw.Service.Get(&UserQuery{LoginType: model.LoginTypeUsername, Username: r.Username})
 	if errX == nil {
 		return ErrUsernameExist
