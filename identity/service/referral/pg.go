@@ -30,6 +30,7 @@ func (s *pgService) Save(o *model.Referral) error {
 	return s.db.Create(o).Error
 }
 
+//DeleteReferralWithCode when response request, record referral will be deleted
 func (s *pgService) DeleteReferralWithCode(code string) error {
 	res := model.Referral{}
 	return s.db.Where("code = ?", code).Delete(&res).Error
@@ -37,12 +38,5 @@ func (s *pgService) DeleteReferralWithCode(code string) error {
 
 func (s *pgService) Get(q *Query) (model.Referral, error) {
 	res := model.Referral{}
-	db := s.db
-
-	if q.Code != "" {
-		db = db.Where("code = ?", q.Code)
-	}
-
-	err := db.First(&res).Error
-	return res, err
+	return res, s.db.Where("code = ?", q.Code).First(&res).Error
 }

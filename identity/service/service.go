@@ -7,6 +7,6 @@ import (
 
 // Service ...
 type Service struct {
-	UserService   user.Service
-	ReferrService referral.Service
+	UserService     user.Service
+	ReferralService referral.Service
 }

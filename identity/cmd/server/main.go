@@ -62,7 +62,7 @@ func main() {
 				user.NewPGService(pgdb),
 				user.ValidationMiddleware(),
 			).(user.Service),
-			ReferrService: middlewares.Compose(
+			ReferralService: middlewares.Compose(
 				referral.NewPGService(pgdb),
 				referral.ValidationMiddleware(),
 			).(referral.Service),

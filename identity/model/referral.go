@@ -24,7 +24,6 @@ type Referral struct {
 //BeforeCreate genergrate userID before add user
 func (m *Referral) BeforeCreate(scope *gorm.Scope) error {
 	scope.SetColumn("ID", uuid.NewV4())
-	scope.SetColumn("CreatedAt", time.Now())
 	// TTL is 1 day
 	scope.SetColumn("TTL", 3600*24)
 	return nil

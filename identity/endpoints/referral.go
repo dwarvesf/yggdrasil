@@ -2,7 +2,6 @@ package endpoints
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm/dialects/postgres"
@@ -33,7 +32,7 @@ func ReferralUser(s service.Service) endpoint.Endpoint {
 		req := request.(ReferralRequset)
 		code := util.GenerateToken()
 
-		err := s.ReferrService.Save(&model.Referral{
+		err := s.ReferralService.Save(&model.Referral{
 			FromUserID:  req.FromUserID,
 			ToUserEmail: req.ToUserEmail,
 			Code:        code,
@@ -70,7 +69,7 @@ func ResponseReferral(s service.Service) endpoint.Endpoint {
 		req := request.(ResponseReferralRequset)
 
 		// check code invalid
-		res, err := s.ReferrService.Get(&referral.Query{Code: req.Code})
+		res, err := s.ReferralService.Get(&referral.Query{Code: req.Code})
 		if err != nil {
 			return nil, ErrCodeInvalid
 		}
@@ -80,46 +79,32 @@ func ResponseReferral(s service.Service) endpoint.Endpoint {
 		}
 
 		// Make account active
-		user := model.User{}
 		passwordHashed, hashError := util.HashPassword(req.UserInfo.Password)
-
 		if hashError != nil {
 			return nil, hashError
 		}
 
-		if req.UserInfo.LoginType == model.LoginTypeEmail {
-			user = model.User{
-				LoginType: req.UserInfo.LoginType,
-				Email:     req.UserInfo.Identity,
-				Password:  passwordHashed,
-				Status:    model.UserStatusActive,
-			}
+		user := model.User{
+			LoginType: req.UserInfo.LoginType,
+			Password:  passwordHashed,
+			Status:    model.UserStatusActive,
 		}
 
-		if req.UserInfo.LoginType == model.LoginTypePhoneNumber {
-			user = model.User{
-				LoginType:   req.UserInfo.LoginType,
-				PhoneNumber: req.UserInfo.Identity,
-				Password:    passwordHashed,
-				Status:      model.UserStatusActive,
-			}
+		switch req.UserInfo.LoginType {
+		case model.LoginTypeUsername:
+			user.Username = req.UserInfo.Identity
+		case model.LoginTypeEmail:
+			user.Email = req.UserInfo.Identity
+		case model.LoginTypePhoneNumber:
+			user.PhoneNumber = req.UserInfo.Identity
 		}
 
-		if req.UserInfo.LoginType == model.LoginTypeUsername {
-			user = model.User{
-				LoginType: req.UserInfo.LoginType,
-				Username:  req.UserInfo.Identity,
-				Password:  passwordHashed,
-			}
-		}
-
-		fmt.Println(user)
 		if err := s.UserService.Save(&user); err != nil {
 			return nil, err
 		}
 
 		//delete referral
-		if err := s.ReferrService.DeleteReferralWithCode(req.Code); err != nil {
+		if err := s.ReferralService.DeleteReferralWithCode(req.Code); err != nil {
 			return nil, ErrDeleteRefferal
 		}
 
