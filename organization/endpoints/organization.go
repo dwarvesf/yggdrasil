@@ -65,27 +65,66 @@ type UpdateOrganizationResponse struct {
 // UpdateOrganizationEndpoint ...
 func UpdateOrganizationEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		if orgID, ok := ctx.Value(util.OrgIDContextKey).(uuid.UUID); ok {
-			req := request.(UpdateOrganizationRequest)
-			org := &model.Organization{
-				ID:       orgID,
-				Name:     req.Name,
-				Metadata: req.Metadata,
-			}
-
-			org, err := s.OrganizationService.Update(org)
-			if err != nil {
-				return nil, err
-			}
-
-			return UpdateOrganizationResponse{
-				ID:       org.ID,
-				Name:     org.Name,
-				Status:   uint8(org.Status),
-				Metadata: org.Metadata,
-			}, nil
+		orgID, ok := ctx.Value(util.OrgIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
 		}
 
-		return nil, ErrorMissingID
+		req := request.(UpdateOrganizationRequest)
+		org := &model.Organization{
+			ID:       orgID,
+			Name:     req.Name,
+			Metadata: req.Metadata,
+		}
+
+		org, err := s.OrganizationService.Update(org)
+		if err != nil {
+			return nil, err
+		}
+
+		return UpdateOrganizationResponse{
+			ID:       org.ID,
+			Name:     org.Name,
+			Status:   uint8(org.Status),
+			Metadata: org.Metadata,
+		}, nil
+	}
+}
+
+// ArchiveOrganizationRequest ...
+type ArchiveOrganizationRequest struct{}
+
+// ArchiveOrganizationResponse ...
+type ArchiveOrganizationResponse struct {
+	ID       uuid.UUID      `json:"id"`
+	Name     string         `json:"name"`
+	Status   uint8          `json:"status"`
+	Metadata model.Metadata `json:"metadata"`
+}
+
+// ArchiveOrganizationEndpoint ...
+func ArchiveOrganizationEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		orgID, ok := ctx.Value(util.OrgIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
+		}
+
+		org := &model.Organization{
+			ID:     orgID,
+			Status: model.OrganizationStatusInactive,
+		}
+
+		org, err := s.OrganizationService.Archive(org)
+		if err != nil {
+			return nil, err
+		}
+
+		return ArchiveOrganizationResponse{
+			ID:       org.ID,
+			Name:     org.Name,
+			Status:   uint8(org.Status),
+			Metadata: org.Metadata,
+		}, nil
 	}
 }

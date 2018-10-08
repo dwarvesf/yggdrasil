@@ -29,6 +29,12 @@ func ConfigOrganizationRouter(r chi.Router, endpoints endpoints.Endpoints, optio
 				encodeResponse,
 				options...,
 			).ServeHTTP)
+			r.Post("/archive", httptransport.NewServer(
+				endpoints.ArchiveOrganization,
+				DecodeArchiveOrganizationRequest,
+				encodeResponse,
+				options...,
+			).ServeHTTP)
 		})
 	})
 }

@@ -7,28 +7,30 @@ import (
 )
 
 type Endpoints struct {
-	CreateOrganization endpoint.Endpoint
-	UpdateOrganization endpoint.Endpoint
-	CreateGroup        endpoint.Endpoint
-	UpdateGroup        endpoint.Endpoint
-	ArchiveGroup       endpoint.Endpoint
-	JoinGroup          endpoint.Endpoint
-	LeaveGroup         endpoint.Endpoint
-	InviteUser         endpoint.Endpoint
-	KickUser           endpoint.Endpoint
+	CreateOrganization  endpoint.Endpoint
+	UpdateOrganization  endpoint.Endpoint
+	ArchiveOrganization endpoint.Endpoint
+	CreateGroup         endpoint.Endpoint
+	UpdateGroup         endpoint.Endpoint
+	ArchiveGroup        endpoint.Endpoint
+	JoinGroup           endpoint.Endpoint
+	LeaveGroup          endpoint.Endpoint
+	InviteUser          endpoint.Endpoint
+	KickUser            endpoint.Endpoint
 }
 
 // MakeServerEndpoints returns an Endpoints struct
 func MakeServerEndpoints(s service.Service) Endpoints {
 	return Endpoints{
-		CreateOrganization: CreateOrganizationEndpoint(s),
-		UpdateOrganization: UpdateOrganizationEndpoint(s),
-		CreateGroup:        CreateGroupEndpoint(s),
-		UpdateGroup:        UpdateGroupEndpoint(s),
-		ArchiveGroup:       ArchiveGroupEndpoint(s),
-		JoinGroup:          JoinGroupEndpoint(s),
-		LeaveGroup:         LeaveGroupEndpoint(s),
-		InviteUser:         InviteUserEndpoint(s),
-		KickUser:           KickUserEndpoint(s),
+		CreateOrganization:  CreateOrganizationEndpoint(s),
+		UpdateOrganization:  UpdateOrganizationEndpoint(s),
+		ArchiveOrganization: ArchiveOrganizationEndpoint(s),
+		CreateGroup:         CreateGroupEndpoint(s),
+		UpdateGroup:         UpdateGroupEndpoint(s),
+		ArchiveGroup:        ArchiveGroupEndpoint(s),
+		JoinGroup:           JoinGroupEndpoint(s),
+		LeaveGroup:          LeaveGroupEndpoint(s),
+		InviteUser:          InviteUserEndpoint(s),
+		KickUser:            KickUserEndpoint(s),
 	}
 }

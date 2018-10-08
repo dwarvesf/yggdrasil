@@ -40,3 +40,7 @@ func (mw validationMiddleware) Update(org *model.Organization) (*model.Organizat
 
 	return mw.Service.Update(org)
 }
+
+func (mw validationMiddleware) Archive(org *model.Organization) (*model.Organization, error) {
+	return mw.Service.Archive(org)
+}

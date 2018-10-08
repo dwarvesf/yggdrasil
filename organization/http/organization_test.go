@@ -297,9 +297,115 @@ func TestWhenUpdateOrganizationSuccess(t *testing.T) {
 	o := model.Organization{}
 	pgdb.First(&o)
 	if o.ID != org.ID {
-		t.Errorf("Expect Name to be test, but got %+v", res.Name)
+		t.Errorf("Expect %+v to be test, but got %+v", org.ID, o.ID)
 	}
 	if o.Name != "test" {
 		t.Errorf("Expect Name to be test, but got %+v", res.Name)
+	}
+}
+
+func TestArchiveOrganizationNotFound(t *testing.T) {
+	pgdb := testutil.GetDB()
+	defer pgdb.Close()
+	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+
+	req, err := http.NewRequest("POST", "/organizations/5e9707b1-0000-0000-0000-02d2cef27bd9/archive", bytes.NewReader([]byte("{}")))
+	if err != nil {
+		panic(err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusNotFound {
+		t.Errorf("Expect status to be 404, but got %+v", rr.Code)
+	}
+
+	var res testutil.Error
+	if err = json.Unmarshal(rr.Body.Bytes(), &res); err != nil {
+		t.Fatal(err)
+	}
+	if res.Error != "NOT_FOUND" {
+		t.Errorf("Expect err to be NOT_FOUND, but got %+v", res.Error)
+	}
+}
+
+func TestArchiveOrganizationSuccess(t *testing.T) {
+	pgdb := testutil.GetDB()
+	defer pgdb.Close()
+	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+
+	org := model.Organization{
+		Name:     "name",
+		Metadata: make(model.Metadata),
+	}
+	if err := pgdb.Create(&org).Error; err != nil {
+		panic(err)
+	}
+
+	gr1 := model.Group{
+		Name:           "name1",
+		OrganizationID: org.ID,
+		Metadata:       make(model.Metadata),
+	}
+	if err := pgdb.Create(&gr1).Error; err != nil {
+		panic(err)
+	}
+
+	gr2 := model.Group{
+		Name:           "name2",
+		OrganizationID: org.ID,
+		Metadata:       make(model.Metadata),
+	}
+	if err := pgdb.Create(&gr2).Error; err != nil {
+		panic(err)
+	}
+
+	req, err := http.NewRequest("POST", "/organizations/"+org.ID.String()+"/archive", bytes.NewReader([]byte("{}")))
+	if err != nil {
+		panic(err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler.ServeHTTP(rr, req)
+	if rr.Code != http.StatusOK {
+		t.Errorf("Expect status to be 200, but got %+v", rr.Code)
+	}
+
+	var res endpoints.ArchiveOrganizationResponse
+	if err = json.Unmarshal(rr.Body.Bytes(), &res); err != nil {
+		t.Fatal(err)
+	}
+	if res.ID != org.ID {
+		t.Errorf("Expect ID to be %+v, but got %+v", org.ID, res.Name)
+	}
+	if res.Status != 2 {
+		t.Errorf("Expect Status to be 2, but got %+v", res.Status)
+	}
+
+	var count int
+	err = pgdb.Model(&model.Organization{}).
+		Count(&count).
+		Error
+	if err != nil {
+		panic(err)
+	}
+	if count != 1 {
+		t.Errorf("Expect count to be 1, but got %+v", count)
+	}
+
+	o := model.Organization{}
+	pgdb.Where("id = ?", org.ID).First(&o)
+	if o.Status != 2 {
+		t.Errorf("Expect status to be 2, but got %+v", res.Status)
+	}
+
+	g := model.Group{}
+	pgdb.Where("id = ?", gr1.ID).First(&g)
+	if g.Status != 2 {
+		t.Errorf("Expect status to be 2, but got %+v", g.Status)
+	}
+	pgdb.Where("id = ?", gr2.ID).First(&g)
+	if g.Status != 2 {
+		t.Errorf("Expect status to be 2, but got %+v", g.Status)
 	}
 }

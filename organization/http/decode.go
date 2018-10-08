@@ -22,6 +22,13 @@ func DecodeUpdateOrganizationRequest(_ context.Context, r *http.Request) (interf
 	return req, err
 }
 
+// DecodeArchiveOrganizationRequest ...
+func DecodeArchiveOrganizationRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.ArchiveGroupRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
 // DecodeCreateGroupRequest ...
 func DecodeCreateGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.CreateGroupRequest
