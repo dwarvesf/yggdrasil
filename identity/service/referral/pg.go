@@ -16,6 +16,7 @@ func NewPGService(db *gorm.DB) Service {
 	}
 }
 
+//Create a referral, if reffer exist will delete it before create
 func (s *pgService) Save(o *model.Referral) error {
 	db := s.db.Where("from_user_id = ?", o.FromUserID).Where("to_user_email = ?", o.ToUserEmail)
 	res := []model.Referral{}
