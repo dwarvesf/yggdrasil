@@ -21,6 +21,43 @@ func (s *pgService) Create(org *model.Organization) (*model.Organization, error)
 	return org, s.db.Create(org).Error
 }
 
+func (s *pgService) Join(uo *model.UserOrganizations) error {
+	if err := s.checkOrganization(uo.OrganizationID); err != nil {
+		return err
+	}
+
+	err := s.db.Model(&model.UserOrganizations{}).
+		Where("user_id = ?", uo.UserID).
+		Find(&model.UserGroups{}).
+		Error
+	if err == nil {
+		return ErrAlreadyJoined
+	}
+	if err != gorm.ErrRecordNotFound {
+		return err
+	}
+
+	return s.db.Create(uo).Error
+}
+
+func (s *pgService) Leave(uo *model.UserOrganizations) error {
+	if err := s.checkOrganization(uo.OrganizationID); err != nil {
+		return err
+	}
+
+	err := s.db.Model(&model.UserOrganizations{}).
+		Where("user_id = ? AND organization_id = ?", uo.UserID, uo.OrganizationID).
+		Updates(uo).
+		Find(uo).
+		Error
+
+	if err == gorm.ErrRecordNotFound {
+		return ErrHasNotJoined
+	}
+
+	return err
+}
+
 func (s *pgService) Update(org *model.Organization) (*model.Organization, error) {
 	err := s.db.Model(&model.Organization{}).
 		Where("id = ?", org.ID).
@@ -76,4 +113,19 @@ func (s *pgService) Archive(org *model.Organization) (*model.Organization, error
 	tx.Commit()
 
 	return org, nil
+}
+
+func (s *pgService) checkOrganization(id uuid.UUID) error {
+	var org model.Organization
+
+	err := s.db.Where("id = ?", id).Find(&org).Error
+	if err == gorm.ErrRecordNotFound {
+		return ErrNotFound
+	}
+
+	if org.Status == model.OrganizationStatusInactive {
+		return ErrOrganizationNotActive
+	}
+
+	return err
 }

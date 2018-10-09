@@ -23,6 +23,7 @@ func Migrate(db *gorm.DB) {
 	db.AutoMigrate(&model.Group{})
 	db.Model(&model.Group{}).AddForeignKey("organization_id", "organizations(id)", "RESTRICT", "RESTRICT")
 	db.AutoMigrate(&model.UserGroups{})
+	db.AutoMigrate(&model.UserOrganizations{})
 }
 
 // New use to connect with database

@@ -77,3 +77,31 @@ func DecodeKickUserRequest(_ context.Context, r *http.Request) (interface{}, err
 	err := json.NewDecoder(r.Body).Decode(&req)
 	return req, err
 }
+
+// DecodeJoinOrgRequest ...
+func DecodeJoinOrgRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.JoinOrganizationRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+// DecodeLeaveOrgRequest ...
+func DecodeLeaveOrgRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.LeaveOrganizationRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+// DecodeInviteUserOrgRequest ...
+func DecodeInviteUserOrgRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.InviteUserOrgRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+// DecodeKickUserOrgRequest ...
+func DecodeKickUserOrgRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.KickUserOrgRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}

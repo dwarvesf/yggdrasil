@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-kit/kit/endpoint"
 	uuid "github.com/satori/go.uuid"
@@ -126,5 +127,147 @@ func ArchiveOrganizationEndpoint(s service.Service) endpoint.Endpoint {
 			Status:   uint8(org.Status),
 			Metadata: org.Metadata,
 		}, nil
+	}
+}
+
+// JoinOrganizationRequest ...
+type JoinOrganizationRequest struct {
+	UserID uuid.UUID `json:"user_id,omitempty"`
+}
+
+// JoinOrganizationResponse ...
+type JoinOrganizationResponse struct {
+	Status string `json:"status"`
+}
+
+// JoinOrganizationEndpoint ...
+func JoinOrganizationEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		orgID, ok := ctx.Value(util.OrgIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
+		}
+
+		req := request.(JoinOrganizationRequest)
+		uo := &model.UserOrganizations{
+			OrganizationID: orgID,
+			UserID:         req.UserID,
+		}
+
+		err := s.OrganizationService.Join(uo)
+		if err != nil {
+			return nil, err
+		}
+
+		return JoinOrganizationResponse{Status: "success"}, nil
+	}
+}
+
+// LeaveOrganizationRequest ...
+type LeaveOrganizationRequest struct {
+	UserID uuid.UUID `json:"user_id,omitempty"`
+}
+
+// LeaveOrganizationResponse ...
+type LeaveOrganizationResponse struct {
+	Status string `json:"status"`
+}
+
+// LeaveOrganizationEndpoint ...
+func LeaveOrganizationEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		orgID, ok := ctx.Value(util.OrgIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
+		}
+
+		req := request.(LeaveOrganizationRequest)
+		now := time.Now()
+		uo := &model.UserOrganizations{
+			OrganizationID: orgID,
+			UserID:         req.UserID,
+			LeftAt:         &now,
+		}
+
+		err := s.OrganizationService.Leave(uo)
+		if err != nil {
+			return nil, err
+		}
+
+		return LeaveOrganizationResponse{Status: "success"}, nil
+	}
+}
+
+// InviteUserOrgRequest ...
+type InviteUserOrgRequest struct {
+	UserID   uuid.UUID `json:"user_id,omitempty"`
+	FromUser uuid.UUID `json:"from_id,omitempty"`
+}
+
+// InviteUserOrgResponse ...
+type InviteUserOrgResponse struct {
+	Status string `json:"status"`
+}
+
+// InviteUserOrgEndpoint ...
+func InviteUserOrgEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		orgID, ok := ctx.Value(util.OrgIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
+		}
+
+		req := request.(InviteUserOrgRequest)
+		now := time.Now()
+		uo := &model.UserOrganizations{
+			OrganizationID: orgID,
+			UserID:         req.UserID,
+			InvitedBy:      &req.FromUser,
+			InvitedAt:      &now,
+		}
+
+		err := s.OrganizationService.Join(uo)
+		if err != nil {
+			return nil, err
+		}
+
+		return InviteUserOrgResponse{Status: "success"}, nil
+	}
+}
+
+// KickUserOrgRequest ...
+type KickUserOrgRequest struct {
+	UserID   uuid.UUID `json:"user_id,omitempty"`
+	FromUser uuid.UUID `json:"from_id,omitempty"`
+}
+
+// KickUserOrgResponse ...
+type KickUserOrgResponse struct {
+	Status string `json:"status"`
+}
+
+// KickUserOrgEndpoint ...
+func KickUserOrgEndpoint(s service.Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		orgID, ok := ctx.Value(util.OrgIDContextKey).(uuid.UUID)
+		if !ok {
+			return nil, ErrorMissingID
+		}
+
+		req := request.(KickUserOrgRequest)
+		now := time.Now()
+		uo := &model.UserOrganizations{
+			OrganizationID: orgID,
+			UserID:         req.UserID,
+			KickedBy:       &req.FromUser,
+			KickedAt:       &now,
+		}
+
+		err := s.OrganizationService.Leave(uo)
+		if err != nil {
+			return nil, err
+		}
+
+		return KickUserOrgResponse{Status: "success"}, nil
 	}
 }

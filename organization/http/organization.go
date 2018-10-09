@@ -35,6 +35,30 @@ func ConfigOrganizationRouter(r chi.Router, endpoints endpoints.Endpoints, optio
 				encodeResponse,
 				options...,
 			).ServeHTTP)
+			r.Post("/join", httptransport.NewServer(
+				endpoints.JoinOrganization,
+				DecodeJoinOrgRequest,
+				encodeResponse,
+				options...,
+			).ServeHTTP)
+			r.Post("/leave", httptransport.NewServer(
+				endpoints.LeaveOrganization,
+				DecodeLeaveOrgRequest,
+				encodeResponse,
+				options...,
+			).ServeHTTP)
+			r.Post("/invite_user", httptransport.NewServer(
+				endpoints.InviteUserOrganization,
+				DecodeInviteUserOrgRequest,
+				encodeResponse,
+				options...,
+			).ServeHTTP)
+			r.Post("/kick_user", httptransport.NewServer(
+				endpoints.KickUserOrganization,
+				DecodeKickUserOrgRequest,
+				encodeResponse,
+				options...,
+			).ServeHTTP)
 		})
 	})
 }
