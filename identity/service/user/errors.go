@@ -19,6 +19,8 @@ var (
 	ErrPhonenumberExist = errPhoneNumberExist{}
 	//ErrEmailExist ...
 	ErrEmailExist = errEmailExist{}
+	//ErrPasswordEmpty ...
+	ErrPasswordEmpty = errPasswordEmpty{}
 )
 
 type errIdentity struct{}
@@ -58,6 +60,16 @@ func (errUsernameEmpty) Error() string {
 }
 
 func (errUsernameEmpty) StatusCode() int {
+	return http.StatusBadRequest
+}
+
+type errPasswordEmpty struct{}
+
+func (errPasswordEmpty) Error() string {
+	return "Password empty"
+}
+
+func (errPasswordEmpty) StatusCode() int {
 	return http.StatusBadRequest
 }
 

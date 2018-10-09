@@ -41,3 +41,17 @@ func DecodeVerifyTokenRequest(_ context.Context, r *http.Request) (interface{}, 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	return req, err
 }
+
+//DecodeReferralRequest ...
+func DecodeReferralRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.ReferralRequset
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+//DecodeReferralResponse ...
+func DecodeReferralResponse(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.ResponseReferralRequset
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}

@@ -71,5 +71,19 @@ func NewHTTPHandler(s service.Service, endpoints endpoints.Endpoints, logger log
 		options...,
 	).ServeHTTP)
 
+	r.Post("/referral", httptransport.NewServer(
+		endpoints.ReferralUser,
+		DecodeReferralRequest,
+		encodeResponse,
+		options...,
+	).ServeHTTP)
+
+	r.Put("/referral/response", httptransport.NewServer(
+		endpoints.ReferralResponse,
+		DecodeReferralResponse,
+		encodeResponse,
+		options...,
+	).ServeHTTP)
+
 	return r
 }

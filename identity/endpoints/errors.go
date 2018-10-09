@@ -9,7 +9,67 @@ var (
 	ErrorNotActive = errNotActive{}
 	//ErrUnauthorize ...
 	ErrUnauthorize = errUnauthorize{}
+	//ErrReferralUserInfo userinfo error
+	ErrReferralUserInfo = errReferralUserInfo{}
+	//ErrCreateNewAccount create new account error
+	ErrCreateNewAccount = errCreateNewAccount{}
+	//ErrTTLExpires ....
+	ErrTTLExpires = errTTLExpires{}
+	//ErrDeleteRefferal ...
+	ErrDeleteRefferal = errDeleteRefferal{}
+	//ErrCodeInvalid ...
+	ErrCodeInvalid = errCodeInvalid{}
 )
+
+type errReferralUserInfo struct{}
+
+func (errReferralUserInfo) Error() string {
+	return "User info error"
+}
+
+func (errReferralUserInfo) StatusCode() int {
+	return http.StatusBadRequest
+}
+
+type errCreateNewAccount struct{}
+
+func (errCreateNewAccount) Error() string {
+	return "Create new account error"
+}
+
+func (errCreateNewAccount) StatusCode() int {
+	return http.StatusBadRequest
+}
+
+type errTTLExpires struct{}
+
+func (errTTLExpires) Error() string {
+	return "TTL expires"
+}
+
+func (errTTLExpires) StatusCode() int {
+	return http.StatusBadRequest
+}
+
+type errCodeInvalid struct{}
+
+func (errCodeInvalid) Error() string {
+	return "Code in valid"
+}
+
+func (errCodeInvalid) StatusCode() int {
+	return http.StatusBadRequest
+}
+
+type errDeleteRefferal struct{}
+
+func (errDeleteRefferal) Error() string {
+	return "Delete referral error"
+}
+
+func (errDeleteRefferal) StatusCode() int {
+	return http.StatusBadRequest
+}
 
 type errInvalidLogin struct{}
 

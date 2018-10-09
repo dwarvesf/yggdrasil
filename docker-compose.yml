@@ -93,6 +93,7 @@ services:
 
   adminer:
     image: adminer
+    container_name: adminer
     ports:
       - 8777:8080
     restart: always
