@@ -56,7 +56,7 @@ up-notification:
 
 up-networks:
 	cd $(SRCPATH)/networks && make build-alpine && \
-	docker rm -f follow | true && \
+	docker rm -f networks | true && \
 	docker-compose up -d --build --force-recreate; rm server
 
 up: up-email up-sms up-payment up-notification up-scheduler up-identity up-device up-organization up-networks

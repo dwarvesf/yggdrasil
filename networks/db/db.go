@@ -20,6 +20,7 @@ type PG struct {
 // Migrate use to migrate database
 func Migrate(db *gorm.DB) {
 	db.AutoMigrate(&model.Follow{})
+	db.AutoMigrate(&model.Friend{})
 }
 
 // New use to connect with database

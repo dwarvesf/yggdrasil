@@ -12,6 +12,12 @@ type Endpoints struct {
 	UnFollow     endpoint.Endpoint
 	GetFollower  endpoint.Endpoint
 	GetFollowee  endpoint.Endpoint
+
+	MakeFriend endpoint.Endpoint
+	Accept     endpoint.Endpoint
+	Reject     endpoint.Endpoint
+	UnFriend   endpoint.Endpoint
+	GetFriends endpoint.Endpoint
 }
 
 // MakeServerEndpoints returns an Endpoints struct
@@ -21,5 +27,11 @@ func MakeServerEndpoints(s service.Service) Endpoints {
 		UnFollow:     UnFollowEndpoints(s),
 		GetFollower:  MakeFollowerEndpoints(s),
 		GetFollowee:  MakeFolloweeEndpoints(s),
+
+		MakeFriend: MakeFriendEndpoints(s),
+		Accept:     AcceptRequestEndpoints(s),
+		Reject:     RejectRequestEndpoints(s),
+		UnFriend:   UnFriendEndpoints(s),
+		GetFriends: GetFriendsEndpoints(s),
 	}
 }

@@ -61,5 +61,42 @@ func NewHTTPHandler(s service.Service, endpoints endpoints.Endpoints, logger log
 		options...,
 	).ServeHTTP)
 
+	r.Route("/friends", func(r chi.Router) {
+		r.Put("/accept", httptransport.NewServer(
+			endpoints.Accept,
+			DecodeAcceptRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP)
+
+		r.Put("/reject", httptransport.NewServer(
+			endpoints.Reject,
+			DecodeRejectRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP)
+
+		r.Post("/", httptransport.NewServer(
+			endpoints.MakeFriend,
+			DecodeMakeFriendRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP)
+
+		r.Put("/unfriend", httptransport.NewServer(
+			endpoints.UnFriend,
+			DecodeUnFriendRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP)
+
+		r.Get("/{user_id}/list", httptransport.NewServer(
+			endpoints.GetFriends,
+			DecodeGetFriendRequest,
+			encodeResponse,
+			options...,
+		).ServeHTTP)
+	})
+
 	return r
 }

@@ -25,7 +25,17 @@ const (
 )
 
 func MigrateTable(db *gorm.DB) error {
-	return db.CreateTable(model.Follow{}).Error
+	err := db.CreateTable(model.Follow{}).Error
+	if err != nil {
+		return err
+	}
+
+	err = db.CreateTable(model.Friend{}).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func CreateSampleData(db *gorm.DB) error {
@@ -37,7 +47,20 @@ func CreateSampleData(db *gorm.DB) error {
 		ToUser:   fakeToUUID,
 	}
 
-	return db.Create(&follow).Error
+	friend := model.Friend{
+		FromUser: fakeFromUUID,
+		ToUser:   fakeToUUID,
+	}
+
+	if err := db.Create(&follow).Error; err != nil {
+		return err
+	}
+
+	if err := db.Create(&friend).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // CreateTestDatabase will create a test-database and test-schema

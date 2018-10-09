@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/dwarvesf/yggdrasil/networks/service/friend"
+
 	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 
@@ -52,6 +54,10 @@ func main() {
 				follow.NewPGService(pgdb),
 				follow.ValidationMiddleware(),
 			).(follow.Service),
+			FriendService: middlewares.Compose(
+				friend.NewPGService(pgdb),
+				friend.ValidationMiddleware(),
+			).(friend.Service),
 		}
 	}
 
