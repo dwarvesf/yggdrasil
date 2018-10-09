@@ -23,6 +23,5 @@ type Friend struct {
 func (f *Friend) BeforeCreate(scope *gorm.Scope) error {
 	scope.SetColumn("ID", uuid.NewV4())
 	scope.SetColumn("RequestedAt", time.Now())
-	scope.SetColumn("CreatedAt", time.Now())
 	return nil
 }

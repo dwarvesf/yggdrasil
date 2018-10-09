@@ -27,7 +27,7 @@ func (s *pgService) Save(o *model.Friend) error {
 func (s *pgService) MakeFriend(from, to uuid.UUID) error {
 	friend := model.Friend{}
 
-	err := s.db.Where(map[string]interface{}{"from_user": from, "to_user": to}).Find(&friend).Error
+	err := s.db.Where(map[string]interface{}{"from_user": from, "to_user": to}).First(&friend).Error
 	if err != nil {
 		return s.Save(&model.Friend{FromUser: from, ToUser: to})
 	}
@@ -42,7 +42,7 @@ func (s *pgService) MakeFriend(from, to uuid.UUID) error {
 func (s *pgService) UnFriend(from, to uuid.UUID) error {
 	friend := model.Friend{}
 
-	err := s.db.Where(map[string]interface{}{"from_user": from, "to_user": to}).Find(&friend).Error
+	err := s.db.Where(map[string]interface{}{"from_user": from, "to_user": to}).First(&friend).Error
 	if err != nil {
 		return ErrRequestNotExist
 	}
@@ -54,7 +54,7 @@ func (s *pgService) UnFriend(from, to uuid.UUID) error {
 func (s *pgService) Accept(from, to uuid.UUID) error {
 	friend := model.Friend{}
 
-	err := s.db.Where(map[string]interface{}{"from_user": from, "to_user": to}).Find(&friend).Error
+	err := s.db.Where(map[string]interface{}{"from_user": from, "to_user": to}).First(&friend).Error
 	if err != nil {
 		return ErrRequestNotExist
 	}
@@ -65,7 +65,7 @@ func (s *pgService) Accept(from, to uuid.UUID) error {
 func (s *pgService) Reject(from, to uuid.UUID) error {
 	friend := model.Friend{}
 
-	err := s.db.Where(map[string]interface{}{"from_user": from, "to_user": to}).Find(&friend).Error
+	err := s.db.Where(map[string]interface{}{"from_user": from, "to_user": to}).First(&friend).Error
 	if err != nil {
 		return ErrRequestNotExist
 	}
