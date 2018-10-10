@@ -32,11 +32,7 @@ func (s *pgService) MakeFriend(from, to uuid.UUID) error {
 		return s.db.Create(&model.Friend{FromUser: from, ToUser: to}).Error
 	}
 
-	if !friend.AcceptedAt.IsZero() {
-		return ErrFriendAccepted
-	}
-
-	return ErrFriendRejected
+	return nil
 }
 
 func (s *pgService) UnFriend(from, to uuid.UUID) error {
