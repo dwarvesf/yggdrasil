@@ -25,8 +25,15 @@ const (
 )
 
 func MigrateTable(db *gorm.DB) error {
-	db.AutoMigrate(model.Follow{})
-	db.AutoMigrate(model.Friend{})
+	err := db.AutoMigrate(model.Follow{}).Error
+	if err != nil {
+		return err
+	}
+
+	err = db.AutoMigrate(model.Friend{}).Error
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

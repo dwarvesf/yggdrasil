@@ -13,7 +13,7 @@ import (
 
 // CreateFollowRequest ...
 type CreateFollowRequest struct {
-	FromUser uuid.UUID `json:"from"`
+	FromUser uuid.UUID `json:"from"`	
 	ToUser   uuid.UUID `json:"to"`
 }
 

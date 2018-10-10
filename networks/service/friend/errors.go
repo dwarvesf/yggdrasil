@@ -74,7 +74,7 @@ func (errUserIDInvalid) StatusCode() int {
 type errFriendAccepted struct{}
 
 func (errFriendAccepted) Error() string {
-	return "Friend not accepted"
+	return "Friend accepted"
 }
 
 func (errFriendAccepted) StatusCode() int {
