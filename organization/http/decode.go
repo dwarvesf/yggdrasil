@@ -8,6 +8,11 @@ import (
 	"github.com/dwarvesf/yggdrasil/organization/endpoints"
 )
 
+// DecodeNullRequest ...
+func DecodeNullRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
 // DecodeCreateOrganizationRequest ...
 func DecodeCreateOrganizationRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.CreateOrganizationRequest
@@ -36,13 +41,6 @@ func DecodeUpdateGroupRequest(_ context.Context, r *http.Request) (interface{}, 
 	return req, err
 }
 
-// DecodeArchiveGroupRequest ...
-func DecodeArchiveGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req endpoints.ArchiveGroupRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	return req, err
-}
-
 // DecodeJoinGroupRequest ...
 func DecodeJoinGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.JoinGroupRequest
@@ -67,6 +65,34 @@ func DecodeInviteUserRequest(_ context.Context, r *http.Request) (interface{}, e
 // DecodeKickUserRequest ...
 func DecodeKickUserRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.KickUserRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+// DecodeJoinOrgRequest ...
+func DecodeJoinOrgRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.JoinOrganizationRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+// DecodeLeaveOrgRequest ...
+func DecodeLeaveOrgRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.LeaveOrganizationRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+// DecodeInviteUserOrgRequest ...
+func DecodeInviteUserOrgRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.InviteUserOrgRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	return req, err
+}
+
+// DecodeKickUserOrgRequest ...
+func DecodeKickUserOrgRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.KickUserOrgRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	return req, err
 }

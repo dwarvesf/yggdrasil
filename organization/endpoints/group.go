@@ -94,9 +94,6 @@ func UpdateGroupEndpoint(s service.Service) endpoint.Endpoint {
 	}
 }
 
-// ArchiveGroupRequest ...
-type ArchiveGroupRequest struct{}
-
 // ArchiveGroupResponse ...
 type ArchiveGroupResponse struct {
 	ID       uuid.UUID      `json:"id"`

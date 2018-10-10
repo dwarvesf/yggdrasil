@@ -40,3 +40,15 @@ func (mw validationMiddleware) Update(org *model.Organization) (*model.Organizat
 
 	return mw.Service.Update(org)
 }
+
+func (mw validationMiddleware) Archive(org *model.Organization) (*model.Organization, error) {
+	return mw.Service.Archive(org)
+}
+
+func (mw validationMiddleware) Join(uo *model.UserOrganizations) error {
+	return mw.Service.Join(uo)
+}
+
+func (mw validationMiddleware) Leave(uo *model.UserOrganizations) error {
+	return mw.Service.Leave(uo)
+}
