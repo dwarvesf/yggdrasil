@@ -31,7 +31,7 @@ func ConfigGroupRouter(r chi.Router, endpoints endpoints.Endpoints, options []ht
 			).ServeHTTP)
 			r.Post("/archive", httptransport.NewServer(
 				endpoints.ArchiveGroup,
-				DecodeArchiveGroupRequest,
+				DecodeNullRequest,
 				encodeResponse,
 				options...,
 			).ServeHTTP)

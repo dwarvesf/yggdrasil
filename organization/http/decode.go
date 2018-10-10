@@ -8,6 +8,11 @@ import (
 	"github.com/dwarvesf/yggdrasil/organization/endpoints"
 )
 
+// DecodeNullRequest ...
+func DecodeNullRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	return nil, nil
+}
+
 // DecodeCreateOrganizationRequest ...
 func DecodeCreateOrganizationRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.CreateOrganizationRequest
@@ -22,13 +27,6 @@ func DecodeUpdateOrganizationRequest(_ context.Context, r *http.Request) (interf
 	return req, err
 }
 
-// DecodeArchiveOrganizationRequest ...
-func DecodeArchiveOrganizationRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req endpoints.ArchiveGroupRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	return req, err
-}
-
 // DecodeCreateGroupRequest ...
 func DecodeCreateGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.CreateGroupRequest
@@ -39,13 +37,6 @@ func DecodeCreateGroupRequest(_ context.Context, r *http.Request) (interface{}, 
 // DecodeUpdateGroupRequest ...
 func DecodeUpdateGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.UpdateGroupRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
-	return req, err
-}
-
-// DecodeArchiveGroupRequest ...
-func DecodeArchiveGroupRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req endpoints.ArchiveGroupRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	return req, err
 }

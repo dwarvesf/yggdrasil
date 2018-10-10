@@ -26,14 +26,16 @@ func (s *pgService) Join(uo *model.UserOrganizations) error {
 		return err
 	}
 
-	err := s.db.Model(&model.UserOrganizations{}).
+	// One user can only join one organization
+	var u model.UserOrganizations
+	err := s.db.Model(&u).
 		Where("user_id = ?", uo.UserID).
-		Find(&model.UserGroups{}).
+		Find(&u).
 		Error
-	if err == nil {
+	if u.UserID == uo.UserID {
 		return ErrAlreadyJoined
 	}
-	if err != gorm.ErrRecordNotFound {
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return err
 	}
 

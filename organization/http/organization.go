@@ -31,7 +31,7 @@ func ConfigOrganizationRouter(r chi.Router, endpoints endpoints.Endpoints, optio
 			).ServeHTTP)
 			r.Post("/archive", httptransport.NewServer(
 				endpoints.ArchiveOrganization,
-				DecodeArchiveOrganizationRequest,
+				DecodeNullRequest,
 				encodeResponse,
 				options...,
 			).ServeHTTP)

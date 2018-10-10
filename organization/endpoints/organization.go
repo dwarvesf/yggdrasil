@@ -92,9 +92,6 @@ func UpdateOrganizationEndpoint(s service.Service) endpoint.Endpoint {
 	}
 }
 
-// ArchiveOrganizationRequest ...
-type ArchiveOrganizationRequest struct{}
-
 // ArchiveOrganizationResponse ...
 type ArchiveOrganizationResponse struct {
 	ID       uuid.UUID      `json:"id"`
