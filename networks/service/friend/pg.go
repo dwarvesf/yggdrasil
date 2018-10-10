@@ -1,7 +1,6 @@
 package friend
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -48,7 +47,7 @@ func (s *pgService) UnFriend(from, to uuid.UUID) error {
 		return ErrRequestNotExist
 	}
 
-	return s.db.Model(&friend).Delete(friend).Error
+	return s.db.Delete(&friend).Error
 }
 
 func (s *pgService) Accept(from, to uuid.UUID) error {
@@ -74,12 +73,6 @@ func (s *pgService) Reject(from, to uuid.UUID) error {
 }
 
 func (s *pgService) GetFriends(userID uuid.UUID) ([]model.Friend, error) {
-	res := []model.Friend{}
-	err := s.db.Where("from_user = ?", userID).Or("to_user = ?", userID).Not("accepted_at", time.Time{}).Find(&res).Error
-	fmt.Println(res)
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
+	friends := []model.Friend{}
+	return friends, s.db.Where("from_user = ?", userID).Or("to_user = ?", userID).Not("accepted_at", time.Time{}).Find(&friends).Error
 }
