@@ -102,7 +102,6 @@ func Test_pgService_MakeFriend(t *testing.T) {
 				from: fakeFromUUID,
 				to:   fakeToUUID,
 			},
-			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
