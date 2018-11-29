@@ -15,47 +15,47 @@ init: remove-infras
 	./setup.sh
 
 up-email:
-	cd $(SRCPATH)/email && make build-alpine && \
+	cd $(SRCPATH)/services/email && make build-alpine && \
 	docker rm -f email | true && \
 	docker-compose up -d --build --force-recreate; rm worker
 
 up-sms:
-	cd $(SRCPATH)/sms && make build-alpine && \
+	cd $(SRCPATH)/services/sms && make build-alpine && \
 	docker rm -f sms | true && \
 	docker-compose up -d --build --force-recreate; rm worker
 
 up-payment:
-	cd $(SRCPATH)/payment && make build-alpine && \
+	cd $(SRCPATH)/services/payment && make build-alpine && \
 	docker rm -f payment | true && \
 	docker-compose up -d --build --force-recreate; rm worker
 
 up-organization: up-identity
-	cd $(SRCPATH)/organization && make build-alpine && \
+	cd $(SRCPATH)/services/organization && make build-alpine && \
 	docker rm -f organization | true && \
 	docker-compose up -d --build --force-recreate; rm server
 
 up-identity:
-	cd $(SRCPATH)/identity && make build-alpine && \
+	cd $(SRCPATH)/services/identity && make build-alpine && \
 	docker rm -f identity | true && \
 	docker-compose up -d --build --force-recreate; rm server
 
 up-device:
-	cd $(SRCPATH)/device && make build-alpine && \
+	cd $(SRCPATH)/services/device && make build-alpine && \
 	docker rm -f device | true && \
 	docker-compose up -d --build --force-recreate; rm server
 
 up-scheduler:
-	cd $(SRCPATH)/scheduler && make build-alpine && \
+	cd $(SRCPATH)/services/scheduler && make build-alpine && \
 	docker rm -f scheduler | true && \
 	docker-compose up -d --build --force-recreate; rm worker
 
 up-notification:
-	cd $(SRCPATH)/notification && make build-alpine && \
+	cd $(SRCPATH)/services/notification && make build-alpine && \
 	docker rm -f notification | true && \
 	docker-compose up -d --build --force-recreate; rm worker
 
 up-networks:
-	cd $(SRCPATH)/networks && make build-alpine && \
+	cd $(SRCPATH)/services/networks && make build-alpine && \
 	docker rm -f networks | true && \
 	docker-compose up -d --build --force-recreate; rm server
 
@@ -82,7 +82,7 @@ test-scheduler:
 
 test-organization:
 	go test ./organization/...
-	
+
 test-networks:
 	go test ./networks/...
 

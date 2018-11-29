@@ -1,40 +1,30 @@
-package toolkit
+package testutil
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"github.com/satori/go.uuid"
 
-	deviceModel "github.com/dwarvesf/yggdrasil/services/device/model"
-	identityModel "github.com/dwarvesf/yggdrasil/services/identity/model"
+	"github.com/dwarvesf/yggdrasil/services/identity/model"
+	"github.com/jinzhu/gorm"
 )
 
-// NewDB return a db connection and a function to close DB
-func NewDB(ds string) (*gorm.DB, func()) {
-	db, err := gorm.Open("postgres", ds)
-	if err != nil {
-		panic(err)
-	}
-
-	return db, func() {
-		err := db.Close()
-		if err != nil {
-			log.Println("Failed to close DB by error", err)
-		}
-	}
+type User struct {
+	ID           string
+	Username     string
+	Phong_Number string
+	Email        string
+	Login_Type   string
+	Password     string
+	Status       string
 }
 
-// ToDS return datasource of given values
-func ToDS(user, password, address string, port int, dialect, name string) string {
-	return fmt.Sprintf("%v://%v:%v@%v:%v/%v?sslmode=disable", dialect, user, password, address, port, name)
-}
-
+// DB info
 const (
 	dbHost     = "localhost"
 	dbPort     = 5439
@@ -42,6 +32,34 @@ const (
 	dbPassword = "123"
 	dbName     = "test"
 )
+
+func MigrateTable(db *gorm.DB) error {
+	db.CreateTable(model.User{})
+	db.CreateTable(model.Referral{})
+	return nil
+}
+
+func CreateSampleData(db *gorm.DB) error {
+	uuid, _ := uuid.FromString("42fd427e-0753-4a00-aed5-483a0c7c62ab")
+	user := model.User{
+		ID:        uuid,
+		LoginType: "username",
+		Username:  "meocon",
+		Password:  "123",
+		Status:    2,
+	}
+
+	referral := model.Referral{
+		ID:          uuid,
+		Code:        "123456",
+		FromUserID:  uuid,
+		ToUserEmail: "meocon@meocon.org",
+	}
+
+	db.Create(&user)
+	db.Create(&referral)
+	return nil
+}
 
 // CreateTestDatabase will create a test-database and test-schema
 func CreateTestDatabase(t *testing.T) (*gorm.DB, string, func()) {
@@ -79,12 +97,4 @@ func CreateTestDatabase(t *testing.T) (*gorm.DB, string, func()) {
 			t.Fatalf("Fail to drop database. %s", err.Error())
 		}
 	}
-}
-
-// MigrateTables migrate db with tables base by domain model
-func MigrateTables(db *gorm.DB) error {
-	return db.AutoMigrate(
-		identityModel.User{},
-		deviceModel.Device{},
-	).Error
 }
