@@ -49,12 +49,10 @@ curl -X PUT --url $PRIVATE_IP:8500/v1/kv/kafka \
     "address": "10.5.0.6",
     "port": 9092
 }'
-
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/db-networks \
     -d '{
     "user": "admin",
     "password": "123",
     "db": "networks"
 }'
-
 curl -X PUT --url $PRIVATE_IP:8500/v1/kv/fcm_credentials -d $FCM_CREDENTIAL

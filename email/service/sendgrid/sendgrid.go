@@ -22,7 +22,6 @@ func New(apiKey string) email.Emailer {
 
 // Send sends an email via sendgrid
 func (sc *Sendgrid) Send(p *model.Payload) error {
-
 	fromName := p.From.Name
 	if fromName == "" {
 		return ErrNameIsRequired
