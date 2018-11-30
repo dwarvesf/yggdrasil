@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 
+	"github.com/dwarvesf/yggdrasil/logger"
 	"github.com/dwarvesf/yggdrasil/services/organization/db"
 	serviceHttp "github.com/dwarvesf/yggdrasil/services/organization/http"
 )
@@ -22,12 +22,7 @@ func main() {
 	)
 	flag.Parse()
 
-	var logger log.Logger
-	{
-		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout))
-		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
-		logger = log.With(logger, "caller", log.DefaultCaller)
-	}
+	logger := logger.NewLogger()
 
 	consulClient, err := consul.NewClient(&consul.Config{
 		Address: fmt.Sprintf("consul-server:8500"),
@@ -40,7 +35,7 @@ func main() {
 	db.Migrate(pgdb)
 	defer closeDB()
 
-	h := serviceHttp.NewHTTPHandler(pgdb, logger, true)
+	h := serviceHttp.NewHTTPHandler(pgdb, true)
 
 	errs := make(chan error)
 	go func() {
@@ -65,13 +60,13 @@ func main() {
 		}); err != nil {
 			panic(err)
 		}
-		logger.Log("consul", "registered", "name", name)
+		logger.Info("consul registered, name: %s", name)
 	}()
 
 	go func() {
-		logger.Log("transport", "HTTP", "addr", *httpAddr)
+		logger.Info("transport HTTP ,addr: %s", *httpAddr)
 		errs <- http.ListenAndServe(*httpAddr, h)
 	}()
 
-	logger.Log("exit", <-errs)
+	logger.Info("exit", <-errs)
 }

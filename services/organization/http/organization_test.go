@@ -10,14 +10,13 @@ import (
 	"github.com/dwarvesf/yggdrasil/services/organization/endpoints"
 	"github.com/dwarvesf/yggdrasil/services/organization/model"
 	"github.com/dwarvesf/yggdrasil/services/organization/util/testutil"
-	"github.com/go-kit/kit/log"
 	uuid "github.com/satori/go.uuid"
 )
 
 func TestWhenCreateOrganizationWithoutNameShouldReturnError(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	reqJSON := `{}`
 	req, err := http.NewRequest("POST", "/organizations", bytes.NewReader([]byte(reqJSON)))
@@ -54,7 +53,7 @@ func TestWhenCreateOrganizationWithoutNameShouldReturnError(t *testing.T) {
 func TestWhenCreateOrganizationWithNameAndEmptyMetadataShouldReturnSuccess(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	reqJSON := `{"name": "test"}`
 	req, err := http.NewRequest("POST", "/organizations", bytes.NewReader([]byte(reqJSON)))
@@ -109,7 +108,7 @@ func TestWhenCreateOrganizationWithNameAndEmptyMetadataShouldReturnSuccess(t *te
 func TestWhenCreateOrganizationSuccess(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	reqJSON := `{"name": "test", "metadata": {"t1": "1", "t2": "2"}}`
 	req, err := http.NewRequest("POST", "/organizations", bytes.NewReader([]byte(reqJSON)))
@@ -170,7 +169,7 @@ func TestWhenCreateOrganizationSuccess(t *testing.T) {
 func TestWhenUpdateOrganizationWithInvalidID(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	reqJSON := `{"name": "test"}`
 	req, err := http.NewRequest("PUT", "/organizations/5e9707b1", bytes.NewReader([]byte(reqJSON)))
@@ -196,7 +195,7 @@ func TestWhenUpdateOrganizationWithInvalidID(t *testing.T) {
 func TestWhenUpdateOrganizationWithoutNameShouldReturnError(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	reqJSON := `{}`
 	req, err := http.NewRequest("PUT", "/organizations/5e9707b1-0000-0000-0000-02d2cef27bd9", bytes.NewReader([]byte(reqJSON)))
@@ -222,7 +221,7 @@ func TestWhenUpdateOrganizationWithoutNameShouldReturnError(t *testing.T) {
 func TestWhenUpdateOrganizationWhenNotFoundShouldReturnError(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	reqJSON := `{"name":"test"}`
 	req, err := http.NewRequest("PUT", "/organizations/5e9707b1-0000-0000-0000-02d2cef27bd9", bytes.NewReader([]byte(reqJSON)))
@@ -248,7 +247,7 @@ func TestWhenUpdateOrganizationWhenNotFoundShouldReturnError(t *testing.T) {
 func TestWhenUpdateOrganizationSuccess(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{
 		Name:     "name",
@@ -308,7 +307,7 @@ func TestWhenUpdateOrganizationSuccess(t *testing.T) {
 func TestArchiveOrganizationNotFound(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	req, err := http.NewRequest("POST", "/organizations/5e9707b1-0000-0000-0000-02d2cef27bd9/archive", bytes.NewReader([]byte("{}")))
 	if err != nil {
@@ -333,7 +332,7 @@ func TestArchiveOrganizationNotFound(t *testing.T) {
 func TestArchiveOrganizationSuccess(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{
 		Name:     "name",
@@ -414,7 +413,7 @@ func TestArchiveOrganizationSuccess(t *testing.T) {
 func TestLeaveOrgSuccess(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -482,7 +481,7 @@ func TestLeaveOrgSuccess(t *testing.T) {
 func TestLeaveOrgWhenHasNotJoined(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -514,7 +513,7 @@ func TestLeaveOrgWhenHasNotJoined(t *testing.T) {
 func TestJoinOrgSuccess(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -566,7 +565,7 @@ func TestJoinOrgSuccess(t *testing.T) {
 func TestJoinOrgWhenAlreadyJoined(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -616,7 +615,7 @@ func TestJoinOrgWhenAlreadyJoined(t *testing.T) {
 func TestJoinOrgWhenOrgNotActive(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{
 		Name:     "org",
@@ -652,7 +651,7 @@ func TestJoinOrgWhenOrgNotActive(t *testing.T) {
 func TestJoinOrgWhenOrgNotFound(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	userID := "5e9707b1-0000-0000-0000-02d2cef27bd9"
 	reqJSON := `{"user_id":"` + userID + `"}`

@@ -26,7 +26,7 @@ func main() {
 
 	errs := make(chan error)
 	go func() {
-		logger.Info("starting email worker ")
+		logger.Info("starting email worker")
 		c := make(chan os.Signal)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errs <- fmt.Errorf("%s", <-c)
@@ -46,7 +46,7 @@ func main() {
 			logger.Error("unable to get port %s", err.Error())
 			panic(err)
 		}
-		logger.Warn("registering %s to consul", svcName)
+		logger.Info("registering %s to consul", svcName)
 
 		if err := toolkit.RegisterService(consulClient, svcName, port); err != nil {
 			logger.Error("unable to register to consul %s", err.Error())
@@ -83,12 +83,12 @@ func main() {
 					continue
 				}
 				w.Write("email", message)
-				logger.Info("info", "retry sent")
+				logger.Info("retry payload")
 			}
 		}
 	}()
 
-	logger.Info("exit", <-errs)
+	logger.Error("exit", <-errs)
 }
 
 func sendEmail(r model.Request, consulClient *consul.Client) error {
