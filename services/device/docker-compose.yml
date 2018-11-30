@@ -1,10 +1,10 @@
-version: "3.5"
+version: '3.5'
 services:
   device:
     image: device
     container_name: device
     build:
-      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/device
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/services/device
     env_file:
       - .env
     external_links:

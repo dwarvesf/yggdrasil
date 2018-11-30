@@ -1,10 +1,10 @@
-version: "3.5"
+version: '3.5'
 services:
   identity:
     image: identity
     container_name: identity
     build:
-      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/identity
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/services/identity
     env_file:
       - .env
     external_links:

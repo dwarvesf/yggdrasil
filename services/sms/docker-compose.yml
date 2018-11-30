@@ -1,10 +1,10 @@
-version: "3.5"
+version: '3.5'
 services:
   sms:
     image: sms
     container_name: sms
     build:
-      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/sms
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/services/sms
     env_file:
       - .env
     external_links:

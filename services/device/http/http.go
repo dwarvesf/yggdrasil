@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
-	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 
 	"github.com/dwarvesf/yggdrasil/services/device/endpoints"
@@ -13,7 +12,7 @@ import (
 )
 
 //NewHTTPHandler create new http handler
-func NewHTTPHandler(s service.Service, endpoints endpoints.Endpoints, logger log.Logger, useCORS bool) http.Handler {
+func NewHTTPHandler(s service.Service, endpoints endpoints.Endpoints, useCORS bool) http.Handler {
 	r := chi.NewRouter()
 	if useCORS {
 		cors := cors.New(cors.Options{
@@ -26,7 +25,6 @@ func NewHTTPHandler(s service.Service, endpoints endpoints.Endpoints, logger log
 	}
 
 	options := []httptransport.ServerOption{
-		httptransport.ServerErrorLogger(logger),
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 

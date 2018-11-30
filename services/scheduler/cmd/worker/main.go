@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 
+	"github.com/dwarvesf/yggdrasil/logger"
 	"github.com/dwarvesf/yggdrasil/services/scheduler/db"
 	"github.com/dwarvesf/yggdrasil/services/scheduler/scheduler"
 	"github.com/dwarvesf/yggdrasil/services/scheduler/service"
@@ -20,16 +20,11 @@ import (
 )
 
 func main() {
-	var logger log.Logger
-	{
-		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout))
-		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
-		logger = log.With(logger, "caller", log.DefaultCaller)
-	}
+	logger := logger.NewLogger()
 
 	errs := make(chan error)
 	go func() {
-		logger.Log("worker", "scheduler")
+		logger.Info("starting scheduler worker")
 		c := make(chan os.Signal)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errs <- fmt.Errorf("%s", <-c)
@@ -46,9 +41,10 @@ func main() {
 		name := "scheduler"
 		port, err := strconv.Atoi(os.Getenv("PORT"))
 		if err != nil {
+			logger.Error("unable to get port %s", err.Error())
 			panic(err)
 		}
-		logger.Log("consul", "registering", "name", name)
+		logger.Info("registering %s to consul", name)
 
 		if err := toolkit.RegisterService(consulClient, name, port); err != nil {
 			panic(err)
@@ -63,9 +59,9 @@ func main() {
 	}
 	defer closeDB()
 
-	sch := scheduler.NewScheduler(s, logger)
+	sch := scheduler.NewScheduler(s, *logger)
 	go sch.HandleRequests(2 * time.Minute)
 	go sch.ListenMessages()
 
-	logger.Log("exit", <-errs)
+	logger.Error("exit", <-errs)
 }

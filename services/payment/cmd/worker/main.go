@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 	validator "gopkg.in/validator.v2"
 
+	"github.com/dwarvesf/yggdrasil/logger"
 	"github.com/dwarvesf/yggdrasil/services/payment/model"
 	payment "github.com/dwarvesf/yggdrasil/services/payment/service"
 	"github.com/dwarvesf/yggdrasil/services/payment/service/stripe"
@@ -22,16 +22,11 @@ import (
 )
 
 func main() {
-	var logger log.Logger
-	{
-		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout))
-		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
-		logger = log.With(logger, "caller", log.DefaultCaller)
-	}
+	logger := logger.NewLogger()
 
 	errs := make(chan error)
 	go func() {
-		logger.Log("worker", "payment")
+		logger.Info("starting payment worker")
 		c := make(chan os.Signal)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errs <- fmt.Errorf("%s", <-c)
@@ -41,6 +36,7 @@ func main() {
 		Address: fmt.Sprintf("consul-server:8500"),
 	})
 	if err != nil {
+		logger.Error("unable to get port %s", err.Error())
 		panic(err)
 	}
 
@@ -48,9 +44,10 @@ func main() {
 	go func() {
 		port, err := strconv.Atoi(os.Getenv("PORT"))
 		if err != nil {
+			logger.Error("unable to get port %s", err.Error())
 			panic(err)
 		}
-		logger.Log("consul", "registering", "name", svcName)
+		logger.Warn("registering %s to consul", svcName)
 
 		if err := toolkit.RegisterService(consulClient, svcName, port); err != nil {
 			panic(err)
@@ -68,36 +65,34 @@ func main() {
 		for {
 			b, err := r.Read()
 			if err != nil {
-				logger.Log("error", err.Error())
+				logger.Error("unable to read from kafka %s", err.Error())
 				continue
 			}
 
 			var req model.Request
 			if err = json.Unmarshal(b, &req); err != nil {
-				logger.Log("error", err.Error())
+				logger.Info("unable to parse request %s", err.Error())
 				continue
 			}
 			if err := validator.Validate; err != nil {
-				logger.Log("error", err)
+				logger.Error("Validator error: %s", err)
 				continue
 			}
 
 			if err := sendPayment(req.Payload, consulClient); err != nil {
-				logger.Log("error", err.Error())
-
+				logger.Info("sending payment")
 				message, err := toolkit.CreateRetryMessage("payment", req.Payload, req.Retry)
 				if err != nil {
-					logger.Log("error", err.Error())
+					logger.Error("unable to send a payment %s", err.Error())
 					continue
 				}
-
 				w.Write("payment", message)
-				logger.Log("info", "retry sent")
+				logger.Info("retry payload")
 			}
 		}
 	}()
 
-	logger.Log("exit", <-errs)
+	logger.Error("exit", <-errs)
 }
 
 func sendPayment(p model.Payload, consulClient *consul.Client) error {

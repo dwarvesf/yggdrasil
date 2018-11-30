@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/go-kit/kit/log"
-
+	"github.com/dwarvesf/yggdrasil/logger"
 	"github.com/dwarvesf/yggdrasil/services/scheduler/model"
 	"github.com/dwarvesf/yggdrasil/services/scheduler/service"
 	"github.com/dwarvesf/yggdrasil/services/scheduler/validator"
@@ -18,7 +17,7 @@ type Scheduler interface {
 }
 
 // NewScheduler to create a new worker
-func NewScheduler(service service.Service, logger log.Logger) Scheduler {
+func NewScheduler(service service.Service, logger logger.LoggingService) Scheduler {
 	return &schedulerImpl{
 		Service: service,
 		Logger:  logger,
@@ -27,28 +26,26 @@ func NewScheduler(service service.Service, logger log.Logger) Scheduler {
 
 type schedulerImpl struct {
 	Service service.Service
-	Logger  log.Logger
+	Logger  logger.LoggingService
 }
 
 // HandleRequests will periodically check for request in db and broadcast it to kafka
 func (s *schedulerImpl) HandleRequests(d time.Duration) {
-	for t := range time.Tick(d) {
-		s.Logger.Log("start", t)
-
+	for range time.Tick(d) {
 		requests, err := s.Service.RequestService.GetRequests()
 		if err != nil {
-			s.Logger.Log("error", err.Error())
+			s.Logger.Error("[HandleRequests].GetRequests %s", err.Error())
 			continue
 		}
 		if len(requests) == 0 {
-			s.Logger.Log("info", "skipping")
+			s.Logger.Info("skipping")
 			continue
 		}
 
 		for _, entity := range requests {
 			r, err := entity.ToRequest()
 			if err != nil {
-				s.Logger.Log("error", err)
+				s.Logger.Error("[HandleRequests].ToRequest %s", err.Error())
 				continue
 			}
 
@@ -57,19 +54,19 @@ func (s *schedulerImpl) HandleRequests(d time.Duration) {
 			s.logRequest("sending", r)
 			err = s.sendResponse(r)
 			if err != nil {
-				s.Logger.Log("error", err)
+				s.Logger.Error("[HandleRequests].sendResponse %s", err.Error())
 				continue
 			}
 		}
 
-		s.Logger.Log("sending", "success")
+		s.Logger.Info("sending successfully")
 		s.deleteRequests(requests)
 	}
 }
 
 func (s *schedulerImpl) logRequest(name string, r model.Request) {
-	s.Logger.Log(name, r.Service, "time", r.Timestamp)
-	s.Logger.Log("retry", r.Retry.CurrenyRetry, "maxRetry", r.Retry.MaxRetry, "retryAfter", r.Retry.RetryAfter)
+	s.Logger.Info("name: %s, time: %s", r.Service, r.Timestamp)
+	s.Logger.Info("retry: %s, maxRetry: %s, retryAfter: %s", r.Retry.CurrenyRetry, r.Retry.MaxRetry, r.Retry.RetryAfter)
 }
 
 func (s *schedulerImpl) sendResponse(r model.Request) error {
@@ -103,7 +100,7 @@ func (s *schedulerImpl) deleteRequests(requests []model.RequestEntity) {
 
 	err := s.Service.RequestService.DeleteRequests(ids)
 	if err != nil {
-		s.Logger.Log("error", err.Error())
+		s.Logger.Error("[deleteRequests] err= %s", err.Error())
 	}
 }
 
@@ -115,24 +112,24 @@ func (s *schedulerImpl) ListenMessages() {
 	for {
 		value, err := r.Read()
 		if err != nil {
-			s.Logger.Log("error", err.Error())
+			s.Logger.Error("[ListenMessage]: error= %s", err.Error())
 			continue
 		}
 
 		req, err := s.parseRequest(value)
 		if err != nil {
-			s.Logger.Log("error", err.Error())
+			s.Logger.Error("[ListenMessage]: error= %s", err.Error())
 			continue
 		}
 
 		s.logRequest("saving", req)
 		err = s.saveRequest(req)
 		if err != nil {
-			s.Logger.Log("error", err.Error())
+			s.Logger.Error("[ListenMessage]: error= %s", err.Error())
 			continue
 		}
 
-		s.Logger.Log("saving", "success")
+		s.Logger.Info("saving", "success")
 	}
 }
 

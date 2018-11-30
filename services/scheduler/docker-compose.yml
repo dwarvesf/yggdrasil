@@ -1,10 +1,10 @@
-version: "3.5"
+version: '3.5'
 services:
   scheduler:
     image: scheduler
     container_name: scheduler
     build:
-      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/scheduler
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/services/scheduler
     env_file:
       - .env
     external_links:

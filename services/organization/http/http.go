@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
-	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/jinzhu/gorm"
 
@@ -17,7 +16,7 @@ import (
 )
 
 // NewHTTPHandler that create main handler of the app
-func NewHTTPHandler(pgdb *gorm.DB, logger log.Logger, useCORS bool) http.Handler {
+func NewHTTPHandler(pgdb *gorm.DB, useCORS bool) http.Handler {
 	s := service.Service{
 		OrganizationService: middlewares.Compose(
 			organization.NewPGService(pgdb),
@@ -29,10 +28,10 @@ func NewHTTPHandler(pgdb *gorm.DB, logger log.Logger, useCORS bool) http.Handler
 		).(group.Service),
 	}
 
-	return configHandler(s, endpoints.MakeServerEndpoints(s), logger, useCORS)
+	return configHandler(s, endpoints.MakeServerEndpoints(s), useCORS)
 }
 
-func configHandler(s service.Service, endpoints endpoints.Endpoints, logger log.Logger, useCORS bool) http.Handler {
+func configHandler(s service.Service, endpoints endpoints.Endpoints, useCORS bool) http.Handler {
 	r := chi.NewRouter()
 
 	if useCORS {
@@ -45,10 +44,7 @@ func configHandler(s service.Service, endpoints endpoints.Endpoints, logger log.
 		r.Use(cors.Handler)
 	}
 
-	options := []httptransport.ServerOption{
-		httptransport.ServerErrorLogger(logger),
-		httptransport.ServerErrorEncoder(encodeError),
-	}
+	options := []httptransport.ServerOption{httptransport.ServerErrorEncoder(encodeError)}
 
 	// TODO: Add authorization for all endpoints
 

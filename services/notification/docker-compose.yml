@@ -1,10 +1,10 @@
-version: "3.5"
+version: '3.5'
 services:
   notification:
     image: notification
     container_name: notification
     build:
-      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/notification
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/services/notification
     env_file:
       - .env
     external_links:

@@ -2,12 +2,10 @@ package scheduler
 
 import (
 	"encoding/json"
-	"os"
 	"testing"
 	"time"
 
-	"github.com/go-kit/kit/log"
-
+	"github.com/dwarvesf/yggdrasil/logger"
 	"github.com/dwarvesf/yggdrasil/services/scheduler/model"
 	"github.com/dwarvesf/yggdrasil/services/scheduler/service"
 	"github.com/dwarvesf/yggdrasil/services/scheduler/service/request"
@@ -32,7 +30,7 @@ func TestListenMessagesWhenInvalidShouldNotSave(t *testing.T) {
 		RequestService: requestService,
 		QueueService:   queueService,
 	}
-	sch := NewScheduler(s, log.NewNopLogger())
+	sch := NewScheduler(s, *logger.NewLogger())
 	go sch.ListenMessages()
 
 	// Given
@@ -80,7 +78,7 @@ func TestListenMessagesWhenMessageValidShouldSave(t *testing.T) {
 		RequestService: requestService,
 		QueueService:   queueService,
 	}
-	sch := NewScheduler(s, log.NewNopLogger())
+	sch := NewScheduler(s, *logger.NewLogger())
 	go sch.ListenMessages()
 
 	// Given
@@ -154,7 +152,7 @@ func TestHandleRequests(t *testing.T) {
 		RequestService: requestService,
 		QueueService:   queueService,
 	}
-	sch := NewScheduler(s, log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout)))
+	sch := NewScheduler(s, *logger.NewLogger())
 	go sch.HandleRequests(100 * time.Millisecond)
 
 	// Expect send sms

@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 	validator "gopkg.in/validator.v2"
 
+	"github.com/dwarvesf/yggdrasil/logger"
 	"github.com/dwarvesf/yggdrasil/services/sms/model"
 	sms "github.com/dwarvesf/yggdrasil/services/sms/service"
 	"github.com/dwarvesf/yggdrasil/services/sms/service/twilio"
@@ -22,16 +22,11 @@ import (
 )
 
 func main() {
-	var logger log.Logger
-	{
-		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout))
-		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
-		logger = log.With(logger, "caller", log.DefaultCaller)
-	}
+	logger := logger.NewLogger()
 
 	errs := make(chan error)
 	go func() {
-		logger.Log("worker", "sms")
+		logger.Info("starting sms worker ")
 		c := make(chan os.Signal)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errs <- fmt.Errorf("%s", <-c)
@@ -48,11 +43,13 @@ func main() {
 	go func() {
 		port, err := strconv.Atoi(os.Getenv("PORT"))
 		if err != nil {
+			logger.Error("unable to get port %s", err.Error())
 			panic(err)
 		}
-		logger.Log("consul", "registering", "name", svcName)
+		logger.Error("unable to get port %s", err.Error())
 
 		if err := toolkit.RegisterService(consulClient, svcName, port); err != nil {
+			logger.Error("unable to register to consul %s", err.Error())
 			panic(err)
 		}
 	}()
@@ -68,36 +65,35 @@ func main() {
 		for {
 			b, err := r.Read()
 			if err != nil {
-				logger.Log("error", err.Error())
+				logger.Error("unable to read from kafka %s", err.Error())
 				continue
 			}
 
 			var req model.Request
 
 			if err = json.Unmarshal(b, &req); err != nil {
-				logger.Log("error", err.Error())
+				logger.Info("unable to parse request %s", err.Error())
 				continue
 			}
 			if err := validator.Validate; err != nil {
-				logger.Log("error", err)
+				logger.Error("Validator error: %s", err)
 				continue
 			}
 			if err := sendSms(req.Payload, consulClient); err != nil {
-				logger.Log("error", err.Error())
-
+				logger.Info("sending sms")
 				message, err := toolkit.CreateRetryMessage("sms", req.Payload, req.Retry)
 				if err != nil {
-					logger.Log("error", err.Error())
+					logger.Error("unable to send an email %s", err.Error())
 					continue
 				}
 
 				w.Write("sms", message)
-				logger.Log("info", "retry sent")
+				logger.Info("info", "retry sent")
 			}
 		}
 	}()
 
-	logger.Log("exit", <-errs)
+	logger.Error("exit", <-errs)
 }
 
 func sendSms(p model.Payload, consulClient *consul.Client) error {

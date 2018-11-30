@@ -10,14 +10,13 @@ import (
 	"github.com/dwarvesf/yggdrasil/services/organization/endpoints"
 	"github.com/dwarvesf/yggdrasil/services/organization/model"
 	"github.com/dwarvesf/yggdrasil/services/organization/util/testutil"
-	"github.com/go-kit/kit/log"
 	uuid "github.com/satori/go.uuid"
 )
 
 func TestWhenCreateGroupWithoutNameShouldReturnError(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	reqJSON := `{}`
 	req, err := http.NewRequest("POST", "/groups", bytes.NewReader([]byte(reqJSON)))
@@ -54,7 +53,7 @@ func TestWhenCreateGroupWithoutNameShouldReturnError(t *testing.T) {
 func TestWhenCreateGroupWithOrgNotFound(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	reqJSON := `{"name": "group", "organization_id": "5e9707b1-0000-0000-0000-02d2cef27bd9"}`
 	req, err := http.NewRequest("POST", "/groups", bytes.NewReader([]byte(reqJSON)))
@@ -91,7 +90,7 @@ func TestWhenCreateGroupWithOrgNotFound(t *testing.T) {
 func TestWhenCreateGroupSuccess(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -156,7 +155,7 @@ func TestWhenCreateGroupSuccess(t *testing.T) {
 func TestWhenUpdateGroupWhenNotFoundShouldReturnError(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	reqJSON := `{"name":"test"}`
 	req, err := http.NewRequest("PUT", "/groups/5e9707b1-0000-0000-0000-02d2cef27bd9", bytes.NewReader([]byte(reqJSON)))
@@ -182,7 +181,7 @@ func TestWhenUpdateGroupWhenNotFoundShouldReturnError(t *testing.T) {
 func TestWhenUpdateGroupSuccess(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -245,7 +244,7 @@ func TestWhenUpdateGroupSuccess(t *testing.T) {
 func TestWhenArchiveGroupSuccess(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -299,7 +298,7 @@ func TestWhenArchiveGroupSuccess(t *testing.T) {
 func TestLeaveGroupSuccess(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -376,7 +375,7 @@ func TestLeaveGroupSuccess(t *testing.T) {
 func TestLeaveGroupWhenHasNotJoined(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -417,7 +416,7 @@ func TestLeaveGroupWhenHasNotJoined(t *testing.T) {
 func TestJoinGroupSuccess(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -478,7 +477,7 @@ func TestJoinGroupSuccess(t *testing.T) {
 func TestJoinGroupWhenAlreadyJoined(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -532,7 +531,7 @@ func TestJoinGroupWhenAlreadyJoined(t *testing.T) {
 func TestJoinGroupWhenGroupNotActive(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	org := model.Organization{Name: "org", Metadata: make(model.Metadata)}
 	if err := pgdb.Create(&org).Error; err != nil {
@@ -574,7 +573,7 @@ func TestJoinGroupWhenGroupNotActive(t *testing.T) {
 func TestJoinGroupWhenGroupNotFound(t *testing.T) {
 	pgdb := testutil.GetDB()
 	defer pgdb.Close()
-	handler := NewHTTPHandler(pgdb, log.NewNopLogger(), true)
+	handler := NewHTTPHandler(pgdb, true)
 
 	userID := "5e9707b1-0000-0000-0000-02d2cef27bd9"
 	reqJSON := `{"user_id":"` + userID + `"}`
