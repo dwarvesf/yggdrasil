@@ -13,7 +13,7 @@ func GetQueryParamFromURL(URL url.URL, fieldName string) string {
 	return paramStr
 }
 
-//IsUUIDZero check if uuid is zero value or not
+// IsUUIDZero check if uuid is zero value or not
 func IsUUIDZero(u *uuid.UUID) bool {
 	if u == nil {
 		return true

@@ -54,7 +54,7 @@ func (sc *Sendgrid) Send(p *model.Payload) error {
 		m.AddContent(c)
 	} else {
 		m.SetTemplateID(p.TemplateID)
-		person.SetDynamicTemplateData("data", p.Data)
+		// person.SetDynamicTemplateData("data", p.Data)
 	}
 
 	tos := []*mail.Email{
