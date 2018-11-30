@@ -1,10 +1,10 @@
-version: "3.5"
+version: '3.5'
 services:
   organization:
     image: organization
     container_name: organization
     build:
-      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/organization
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/services/organization
     env_file:
       - .env
     external_links:

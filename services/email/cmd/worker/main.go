@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/go-kit/kit/log"
 	consul "github.com/hashicorp/consul/api"
 
+	"github.com/dwarvesf/yggdrasil/logger"
 	"github.com/dwarvesf/yggdrasil/services/email/model"
 	email "github.com/dwarvesf/yggdrasil/services/email/service"
 	mailgun "github.com/dwarvesf/yggdrasil/services/email/service/mailgun"
@@ -22,16 +22,11 @@ import (
 )
 
 func main() {
-	var logger log.Logger
-	{
-		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout))
-		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
-		logger = log.With(logger, "caller", log.DefaultCaller)
-	}
+	logger := logger.NewLogger()
 
 	errs := make(chan error)
 	go func() {
-		logger.Log("worker", "email")
+		logger.Info("starting email worker ")
 		c := make(chan os.Signal)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errs <- fmt.Errorf("%s", <-c)
@@ -48,11 +43,13 @@ func main() {
 	go func() {
 		port, err := strconv.Atoi(os.Getenv("PORT"))
 		if err != nil {
+			logger.Error("unable to get port %s", err.Error())
 			panic(err)
 		}
-		logger.Log("consul", "registering", "name", svcName)
+		logger.Warn("registering %s to consul", svcName)
 
 		if err := toolkit.RegisterService(consulClient, svcName, port); err != nil {
+			logger.Error("unable to register to consul %s", err.Error())
 			panic(err)
 		}
 	}()
@@ -68,32 +65,30 @@ func main() {
 		for {
 			b, err := r.Read()
 			if err != nil {
-				logger.Log("error", err.Error())
+				logger.Error("unable to read from kafka %s", err.Error())
 				continue
 			}
 
 			var req model.Request
 			if err = json.Unmarshal(b, &req); err != nil {
-				logger.Log("error", err.Error())
+				logger.Info("unable to parse request %s", err.Error())
 				continue
 			}
 
 			if err := sendEmail(req, consulClient); err != nil {
-				logger.Log("error", err.Error())
-
+				logger.Info("sending email")
 				message, err := toolkit.CreateRetryMessage("email", req.Payload, req.Retry)
 				if err != nil {
-					logger.Log("error", err.Error())
+					logger.Error("unable to send an email %s", err.Error())
 					continue
 				}
-
 				w.Write("email", message)
-				logger.Log("info", "retry sent")
+				logger.Info("info", "retry sent")
 			}
 		}
 	}()
 
-	logger.Log("exit", <-errs)
+	logger.Info("exit", <-errs)
 }
 
 func sendEmail(r model.Request, consulClient *consul.Client) error {

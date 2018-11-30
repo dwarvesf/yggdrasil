@@ -1,10 +1,10 @@
-version: "3.5"
+version: '3.5'
 services:
   organization:
     image: networks
     container_name: networks
     build:
-      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/networks
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/services/networks
     env_file:
       - .env
     external_links:

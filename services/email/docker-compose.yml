@@ -1,10 +1,10 @@
-version: "3.5"
+version: '3.5'
 services:
   email:
     image: email
     container_name: email
     build:
-      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/email
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/services/email
     env_file:
       - .env
     external_links:

@@ -1,10 +1,10 @@
-version: "3.5"
+version: '3.5'
 services:
   payment:
     image: payment
     container_name: payment
     build:
-      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/payment
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/services/payment
     env_file:
       - .env
     external_links:
