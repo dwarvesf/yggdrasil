@@ -46,7 +46,6 @@ func main() {
 			logger.Error("unable to get port %s", err.Error())
 			panic(err)
 		}
-		logger.Error("unable to get port %s", err.Error())
 
 		if err := toolkit.RegisterService(consulClient, svcName, port); err != nil {
 			logger.Error("unable to register to consul %s", err.Error())
