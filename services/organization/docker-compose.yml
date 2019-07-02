@@ -1,0 +1,21 @@
+version: '3.5'
+services:
+  organization:
+    image: organization
+    container_name: organization
+    build:
+      context: ${GOPATH}/src/github.com/dwarvesf/yggdrasil/services/organization
+    env_file:
+      - .env
+    external_links:
+      - consul:consul-server
+      - service_mesh_db
+    ports:
+      - ${PORT}:${PORT}
+    networks:
+      service-mesh:
+        ipv4_address: 10.5.0.8
+
+networks:
+  service-mesh:
+    name: service-mesh-nw

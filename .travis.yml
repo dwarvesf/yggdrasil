@@ -1,0 +1,57 @@
+language: go
+
+go: "1.10"
+
+git:
+  depth: 1
+
+services:
+  - docker
+
+before_script:
+  - docker run -d --name pg_test -p 5439:5432 --env POSTGRES_PASSWORD=123 --env
+    POSTGRES_DB=test --env POSTGRES_USER=postgres postgres:9.6 
+  - |
+    while ! docker exec pg_test pg_isready -h localhost -p 5432 > /dev/null; do\
+      sleep 1; \
+    done
+
+env:
+  global:
+    - PORT=3000
+
+jobs:
+  include:
+    - stage: email
+      script: make test-email
+      if: branch =~ /^feature\/email(\/.*$|)/
+    - stage: identity
+      script: make test-identity
+      if: branch =~ /^feature\/identity(\/.*$|)/
+    - stage: device
+      script: make test-device
+      if: branch =~ /^feature\/device(\/.*$|)/
+    - stage: notification
+      script: make test-notification
+      if: branch =~ /^feature\/notification(\/.*$|)/
+    - stage: test-notification
+      script: make test-notification
+      if: branch =~ /^hotfix\/notification(\/.*$|)/
+    - stage: sms
+      script: make test-sms
+      if: branch =~ /^feature\/sms(\/.*$|)/
+    - stage: payment
+      script: make test-payment
+      if: branch =~ /^feature\/payment(\/.*$|)/
+    - stage: organization
+      script: make test-organization
+      if: branch =~ /^feature\/organization(\/.*$|)/
+    - stage: refactor
+      script: make test
+      if: branch =~ /^refactor\/(\/.*$|)/
+    - stage: networks
+      script: make test-networks
+      if: branch =~ /^feature\/networks(\/.*$|)/
+    - stage: features
+      script: make test
+      if: branch =~ /^feature(\/.*$|)/

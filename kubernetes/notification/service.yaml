@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: yggdrasil-notification-worker-service
+spec:
+  selector:
+    app: yggdrasil-notification-worker-app
+  ports:
+    - name: http
+      protocol: TCP
+      port: 65535

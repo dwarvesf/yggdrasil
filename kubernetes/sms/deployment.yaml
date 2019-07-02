@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yggdrasil-sms-worker-deployment
+  labels:
+    app: yggdrasil-sms-worker-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yggdrasil-sms-worker-app
+  template:
+    metadata:
+      labels:
+        app: yggdrasil-sms-worker-app
+    spec:
+      containers:
+      - name: yggdrasil-sms-worker
+        image: hub.dwarvesf.com/yggdrasil/sms:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 464
+        env:
+        - name: SERVICE_ADDRESS
+          value: "yggdrasil-sms-worker-service"
+        - name: PORT
+          value: "464"
+        - name: TWILIO
+          valueFrom:
+            secretKeyRef:
+              name: yggdrasil
+              key: twilio
+      imagePullSecrets:
+      - name: dwarvesf

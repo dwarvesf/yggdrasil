@@ -1,0 +1,6 @@
+test:
+  adapter: postgresql
+  database: test
+  username: admin
+  password: 123
+  
