@@ -10,10 +10,10 @@ type Request struct {
 
 // Payload is the content of request
 type Payload struct {
-	From     string
-	To       string
-	Provider string
-	Content  string
+	From     string `json:"from"`
+	To       string `json:"to"`
+	Provider string `json:"provider"`
+	Content  string `json:"content"`
 }
 
 //TwilioSecret is a struct that define App sid, authenticate token and app number from consul

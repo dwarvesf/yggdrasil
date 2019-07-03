@@ -74,20 +74,20 @@ func main() {
 				logger.Info("unable to parse request %s", err.Error())
 				continue
 			}
-			if err := validator.Validate; err != nil {
-				logger.Error("Validator error: %s", err)
+			if err := validator.Validate(req); err != nil {
+				logger.Error("validate error: %s", err)
 				continue
 			}
+
+			logger.Info("sending sms")
 			if err := sendSms(req.Payload, consulClient); err != nil {
-				logger.Info("sending sms")
 				message, err := toolkit.CreateRetryMessage("sms", req.Payload, req.Retry)
 				if err != nil {
-					logger.Error("unable to send an email %s", err.Error())
+					logger.Error("unable to send sms %s", err.Error())
 					continue
 				}
-
+				logger.Info("sending retry msg to kafka")
 				w.Write("sms", message)
-				logger.Info("info", "retry sent")
 			}
 		}
 	}()
