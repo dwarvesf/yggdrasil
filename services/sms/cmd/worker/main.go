@@ -5,9 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
 
 	consul "github.com/hashicorp/consul/api"
 	validator "gopkg.in/validator.v2"
@@ -22,16 +19,10 @@ import (
 )
 
 func main() {
+	svcName := "sms"
 	logger := logger.NewLogger()
 
-	errs := make(chan error)
-	go func() {
-		logger.Info("starting sms worker ")
-		c := make(chan os.Signal)
-		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
-		errs <- fmt.Errorf("%s", <-c)
-	}()
-
+	logger.Info("start %v worker", svcName)
 	consulClient, err := consul.NewClient(&consul.Config{
 		Address: fmt.Sprintf("consul-server:8500"),
 	})
@@ -39,71 +30,63 @@ func main() {
 		panic(err)
 	}
 
-	svcName := "sms"
-	go func() {
-		port, err := strconv.Atoi(os.Getenv("PORT"))
+	if err := toolkit.RegisterService(consulClient, svcName, 0); err != nil {
+		logger.Error("cannot register to consul %s", err.Error())
+		panic(err)
+	}
+
+	var q queue.Queue
+	q = kafka.New(consulClient)
+	r := q.NewReader(svcName)
+	w := q.NewWriter("scheduler")
+	defer r.Close()
+	defer w.Close()
+
+	for {
+		b, err := r.Read()
 		if err != nil {
-			logger.Error("unable to get port %s", err.Error())
-			panic(err)
+			logger.Error("cannot read from kafka %s", err.Error())
+			continue
 		}
 
-		if err := toolkit.RegisterService(consulClient, svcName, port); err != nil {
-			logger.Error("unable to register to consul %s", err.Error())
-			panic(err)
+		logger.Info("received request %v", string(b))
+		var req model.Request
+		if err = json.Unmarshal(b, &req); err != nil {
+			logger.Info("cannot parse request %s", err.Error())
+			continue
 		}
-	}()
+		if err := validator.Validate(req); err != nil {
+			logger.Error("validate error: %s", err)
+			continue
+		}
 
-	go func() {
-		var q queue.Queue
-		q = kafka.New(consulClient)
-		r := q.NewReader(svcName)
-		w := q.NewWriter("scheduler")
-		defer r.Close()
-		defer w.Close()
+		logger.Info("send %v", svcName)
+		if err := send(req.Payload, consulClient); err != nil {
+			logger.Error("cannot send %v %s", svcName, err.Error())
 
-		for {
-			b, err := r.Read()
+			logger.Info("create retry payload")
+			message, err := toolkit.CreateRetryMessage(svcName, req.Payload, req.Retry)
 			if err != nil {
-				logger.Error("unable to read from kafka %s", err.Error())
+				logger.Error("cannot create retry payload %s", err.Error())
 				continue
 			}
-
-			var req model.Request
-
-			if err = json.Unmarshal(b, &req); err != nil {
-				logger.Info("unable to parse request %s", err.Error())
-				continue
-			}
-			if err := validator.Validate(req); err != nil {
-				logger.Error("validate error: %s", err)
-				continue
-			}
-
-			logger.Info("sending sms")
-			if err := sendSms(req.Payload, consulClient); err != nil {
-				logger.Error("unable to send sms %s", err.Error())
-				message, err := toolkit.CreateRetryMessage("sms", req.Payload, req.Retry)
-				if err != nil {
-					logger.Error("unable to create retry %s", err.Error())
-					continue
-				}
-				logger.Info("sending retry msg to kafka")
-				w.Write("sms", message)
-			}
+			w.Write(svcName, message)
 		}
-	}()
-
-	logger.Error("exit", <-errs)
+	}
 }
 
-func sendSms(p model.Payload, consulClient *consul.Client) error {
+func send(p model.Payload, consulClient *consul.Client) error {
+	var err error
 	var smsClient sms.SMS
 
 	switch p.Provider {
 	case "twilio":
 		v := os.Getenv("TWILIO")
 		if v == "" {
-			v, _ = toolkit.GetConsulValueFromKey(consulClient, "twilio")
+			v, err = toolkit.GetConsulValueFromKey(consulClient, p.Provider)
+			if err != nil {
+				return err
+			}
 		}
 
 		value := model.TwilioSecret{}

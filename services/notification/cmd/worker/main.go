@@ -13,23 +13,23 @@ import (
 	"github.com/dwarvesf/yggdrasil/logger"
 	"github.com/dwarvesf/yggdrasil/services/notification/model"
 	notification "github.com/dwarvesf/yggdrasil/services/notification/service"
+	"github.com/dwarvesf/yggdrasil/services/notification/service/firebase"
 	"github.com/dwarvesf/yggdrasil/toolkit"
 	"github.com/dwarvesf/yggdrasil/toolkit/queue"
 	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
 )
 
 func main() {
+	svcName := "notification"
 	logger := logger.NewLogger()
-	logger.Info("start notification worker")
 
+	logger.Info("start %v worker", svcName)
 	consulClient, err := consul.NewClient(&consul.Config{
 		Address: fmt.Sprintf("consul-server:8500"),
 	})
 	if err != nil {
 		panic(err)
 	}
-
-	svcName := "notification"
 	if err := toolkit.RegisterService(consulClient, svcName, 0); err != nil {
 		panic(err)
 	}
@@ -58,10 +58,10 @@ func main() {
 			continue
 		}
 
-		logger.Info("send notification")
-		err = sendNotification(req.Payload, consulClient)
+		logger.Info("send %v", svcName)
+		err = send(req.Payload, consulClient)
 		if err != nil {
-			logger.Error("cannot send notification %s", err.Error())
+			logger.Error("cannot send %v %s", svcName, err.Error())
 
 			logger.Info("create retry payload")
 			message, err := toolkit.CreateRetryMessage(svcName, req.Payload, req.Retry)
@@ -74,20 +74,22 @@ func main() {
 	}
 }
 
-func sendNotification(p model.Payload, consulClient *consul.Client) error {
+func send(p model.Payload, consulClient *consul.Client) error {
 	ctx := context.Background()
+	var err error
+	var ntf notification.Notificationer
 
-	//get credentials
-	v := os.Getenv("NOTIFICATION")
-	if v == "" {
-		v, _ = toolkit.GetConsulValueFromKey(consulClient, "notification")
-	}
-
-	var n notification.Notificationer
 	switch p.Provider {
 	case "firebase":
-		n = notification.NewFirebaseNotifier(ctx, v)
-		return n.Send(ctx, []string{p.DeviceToken}, p.Title, p.Body, p.Data)
+		v := os.Getenv("FCM_SERVER_KEY")
+		if v == "" {
+			v, err = toolkit.GetConsulValueFromKey(consulClient, p.Provider)
+			if err != nil {
+				return err
+			}
+		}
+		ntf = firebase.New(ctx, v)
+		return ntf.Send(ctx, []string{p.DeviceToken}, p.Title, p.Body, p.Data)
 	default:
 		return errors.New("INVALID_PROVIDER")
 	}
