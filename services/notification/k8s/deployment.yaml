@@ -1,0 +1,41 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: notification
+    type: service-mesh
+  name: notification
+  namespace: sol
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        updatedTimestamp: thurs
+      labels:
+        app: notification
+        type: service-mesh
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: cloud.google.com/gke-preemptible
+                operator: Exists
+            weight: 100
+      containers:
+      - name: notification
+        image: lmquang/notification
+        resources:
+          limits:
+            memory: "256Mi"
+          requests:
+            memory: "128Mi"
+        imagePullPolicy: Always
+      restartPolicy: Always
