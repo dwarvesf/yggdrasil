@@ -64,6 +64,7 @@ func (k *kafka) NewReader(topic string) queue.Reader {
 		Reader: gokafka.NewReader(gokafka.ReaderConfig{
 			Brokers: k.getBrokers(),
 			Topic:   topic,
+			GroupID: topic,
 		}),
 	}
 }

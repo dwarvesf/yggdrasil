@@ -10,9 +10,10 @@ type Request struct {
 
 // Payload is the content of request
 type Payload struct {
-	DeviceToken string `json:"device_token"`
-	Body        string `json:"body"`
-	Title       string `json:"title"`
-	Provider    string `json:"provider"`
-	DeviceType  string `json:"device_type"`
+	DeviceToken string                 `json:"device_token"`
+	Body        string                 `json:"body"`
+	Title       string                 `json:"title"`
+	Provider    string                 `json:"provider"`
+	DeviceType  string                 `json:"device_type"`
+	Data        map[string]interface{} `json:"data"`
 }

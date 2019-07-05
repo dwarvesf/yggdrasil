@@ -3,52 +3,31 @@ package notification
 import (
 	"context"
 
-	"firebase.google.com/go"
-	"firebase.google.com/go/messaging"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/option"
+	"github.com/NaySoftware/go-fcm"
 )
 
-//Notificationer ..
+// Notificationer ..
 type Notificationer interface {
-	Send() (string, error)
+	Send(ctx context.Context, devices []string, body, title string, data interface{}) error
 }
 
-//FirebaseNotifier support send notify from firebase
+// FirebaseNotifier support send notify from firebase
 type FirebaseNotifier struct {
-	client *messaging.Client
+	client *fcm.FcmClient
 }
 
-//Send send notify with firebase
-func (noti *FirebaseNotifier) Send(ctx context.Context, deviceToken, body, title string) (string, error) {
-	mess := &messaging.Message{
-		Data: map[string]string{
-			"title": title,
-			"body":  body,
-		},
-		Token: deviceToken,
-	}
-	return noti.client.Send(ctx, mess)
+// Send send notify with firebase
+func (f *FirebaseNotifier) Send(ctx context.Context, deviceTokens []string, title, body string, data interface{}) error {
+	f.client.NewFcmRegIdsMsg(deviceTokens, data)
+	f.client.SetNotificationPayload(&fcm.NotificationPayload{
+		Title: title,
+		Body:  body,
+	})
+	_, err := f.client.Send()
+	return err
 }
 
-//New new one notifier instance
-func New(ctx context.Context, credentialConfig []byte) *FirebaseNotifier {
-	creds, err := google.CredentialsFromJSON(ctx, credentialConfig, "https://www.googleapis.com/auth/cloud-platform")
-	if err != nil {
-		panic(err)
-	}
-
-	app, err := firebase.NewApp(ctx, nil, option.WithCredentials(creds))
-	if err != nil {
-		panic(err)
-	}
-
-	client, err := app.Messaging(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	return &FirebaseNotifier{client}
+// New new one notifier instance
+func NewFirebaseNotifier(ctx context.Context, s string) Notificationer {
+	return &FirebaseNotifier{client: fcm.NewFcmClient(s)}
 }
-
-//Support any notification provider

@@ -81,9 +81,10 @@ func main() {
 
 			logger.Info("sending sms")
 			if err := sendSms(req.Payload, consulClient); err != nil {
+				logger.Error("unable to send sms %s", err.Error())
 				message, err := toolkit.CreateRetryMessage("sms", req.Payload, req.Retry)
 				if err != nil {
-					logger.Error("unable to send sms %s", err.Error())
+					logger.Error("unable to create retry %s", err.Error())
 					continue
 				}
 				logger.Info("sending retry msg to kafka")
