@@ -19,8 +19,12 @@ import (
 )
 
 func main() {
+	p := os.Getenv("PORT")
+	if p == "" {
+		p = "8080"
+	}
 	var (
-		httpAddr = flag.String("addr", fmt.Sprintf(":%v", os.Getenv("PORT")), "HTTP listen address")
+		httpAddr = flag.String("addr", fmt.Sprintf(":%v", p), "HTTP listen address")
 	)
 	flag.Parse()
 
@@ -56,7 +60,7 @@ func main() {
 	}
 	errs := make(chan error)
 	go func() {
-		port, err := strconv.Atoi(os.Getenv("PORT"))
+		port, err := strconv.Atoi(p)
 		if err != nil {
 			panic(err)
 		}
@@ -71,7 +75,7 @@ func main() {
 		}); err != nil {
 			panic(err)
 		}
-		logger.Info("registered %s", name)
+		logger.Info("registered %s to consul", name)
 	}()
 
 	go func() {

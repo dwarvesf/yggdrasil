@@ -89,7 +89,7 @@ func send(p model.Payload, consulClient *consul.Client) error {
 			}
 		}
 		ntf = firebase.New(ctx, v)
-		return ntf.Send(ctx, []string{p.DeviceToken}, p.Title, p.Body, p.Data)
+		return ntf.Send(ctx, p.DeviceTokens, p.Title, p.Body, p.Data)
 	default:
 		return errors.New("INVALID_PROVIDER")
 	}
