@@ -2,6 +2,9 @@ package firebase
 
 import (
 	"context"
+	"strconv"
+
+	"github.com/dwarvesf/yggdrasil/services/notification/model"
 
 	"github.com/NaySoftware/go-fcm"
 )
@@ -12,14 +15,17 @@ type FirebaseNotifier struct {
 }
 
 // Send send notify with firebase
-func (f *FirebaseNotifier) Send(ctx context.Context, deviceTokens []string, title, body string, data interface{}) error {
-	f.client.NewFcmRegIdsMsg(deviceTokens, data)
-	f.client.SetNotificationPayload(&fcm.NotificationPayload{
-		Title: title,
-		Body:  body,
-	})
-	_, err := f.client.Send()
-	return err
+func (f *FirebaseNotifier) Send(ctx context.Context, deviceTokens []model.DeviceToken, title, body string, data interface{}) error {
+	for _, token := range deviceTokens {
+		f.client.NewFcmRegIdsMsg([]string{token.Token}, data)
+		f.client.SetNotificationPayload(&fcm.NotificationPayload{
+			Title: title,
+			Body:  body,
+			Badge: strconv.Itoa(token.Badge),
+		})
+		f.client.Send()
+	}
+	return nil
 }
 
 // New new one notifier instance

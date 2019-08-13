@@ -6,5 +6,5 @@ import (
 
 // Notificationer ..
 type Notificationer interface {
-	Send(ctx context.Context, devices []string, body, title string, data interface{}) error
+	Send(ctx context.Context, devices []DeviceToken, body, title string, data interface{}) error
 }

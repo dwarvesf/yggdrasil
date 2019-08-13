@@ -8,9 +8,14 @@ type Request struct {
 	Retry   toolkit.RetryMetadata `json:"retry"`
 }
 
+type DeviceToken struct {
+	Token string `json:"token"`
+	Badge int    `json:"badge"`
+}
+
 // Payload is the content of request
 type Payload struct {
-	DeviceTokens []string               `json:"device_tokens"`
+	DeviceTokens []DeviceToken          `json:"device_tokens"`
 	Body         string                 `json:"body"`
 	Title        string                 `json:"title"`
 	Provider     string                 `json:"provider"`
