@@ -4,7 +4,7 @@ import (
 	mailgun "github.com/mailgun/mailgun-go"
 
 	"github.com/dwarvesf/yggdrasil/services/email/model"
-	"github.com/dwarvesf/yggdrasil/services/email/service"
+	email "github.com/dwarvesf/yggdrasil/services/email/service"
 )
 
 //Mailgun contain mailgun client
@@ -15,7 +15,7 @@ type Mailgun struct {
 //New crete new mailgun client
 func New(domain, apiKey, pubKey string) email.Emailer {
 	return &Mailgun{
-		m: mailgun.NewMailgun(domain, apiKey, pubKey),
+		m: mailgun.NewMailgun(domain, apiKey),
 	}
 }
 
