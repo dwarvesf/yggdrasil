@@ -1,30 +1,5 @@
 version: "3.5"
 services:
-  consul:
-    image: gliderlabs/consul-server
-    restart: always
-    container_name: consul
-    command: -server -bootstrap -ui
-    ports:
-      - "8400:8400"
-      - "8500:8500"
-      - "8600:53/udp"
-    networks:
-      service-mesh:
-        ipv4_address: 10.5.0.2
-
-  registrator:
-    image: gliderlabs/registrator:latest
-    restart: always
-    container_name: registrator
-    command: -cleanup=true  consul://10.5.0.2:8500
-    volumes:
-      - "/var/run/docker.sock:/tmp/docker.sock"
-    depends_on:
-      - consul
-    networks:
-      service-mesh:
-        ipv4_address: 10.5.0.3
 
   postgres:
     image: postgres:9.6
@@ -60,31 +35,15 @@ services:
       service-mesh:
         ipv4_address: 10.5.0.100
 
-  zookeeper:
-    image: wurstmeister/zookeeper:3.4.6
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-    depends_on:
-      - registrator
-    networks:
-      service-mesh:
-        ipv4_address: 10.5.0.5
-
   kafka:
-    image: wurstmeister/kafka:2.11-2.0.0
-    container_name: kafka
+    image: nats-streaming/latest
+    container_name: nats
     ports:
-      - "9092:9092"
+      - "4223:4223"
+      - "8223:8223"
     expose:
-      - "9092"
-    depends_on:
-      - zookeeper
-    links:
-      - zookeeper
-    environment:
-      KAFKA_ADVERTISED_HOST_NAME: 10.5.0.6
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      - "4223"
+      - "8223"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
@@ -100,20 +59,6 @@ services:
     networks:
       service-mesh:
         ipv4_address: 10.5.0.90
-
-  postgres-test:
-    image: postgres:9.6
-    restart: always
-    environment:
-      POSTGRES_DB: test
-      POSTGRES_PASSWORD: 123
-    expose:
-      - "5432"
-    ports:
-      - "5439:5432"
-    networks:
-      service-mesh:
-        ipv4_address: 10.5.0.100
 
 networks:
   service-mesh:
