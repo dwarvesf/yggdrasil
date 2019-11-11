@@ -27,6 +27,7 @@ type TransferParams struct {
 	Params            `form:"*"`
 	Amount            *int64  `form:"amount"`
 	Currency          *string `form:"currency"`
+	Description       *string `form:"description"`
 	Destination       *string `form:"destination"`
 	SourceTransaction *string `form:"source_transaction"`
 	SourceType        *string `form:"source_type"`
@@ -51,6 +52,7 @@ type Transfer struct {
 	BalanceTransaction *BalanceTransaction       `json:"balance_transaction"`
 	Created            int64                     `json:"created"`
 	Currency           Currency                  `json:"currency"`
+	Description        string                    `json:"description"`
 	Destination        *TransferDestination      `json:"destination"`
 	DestinationPayment *Charge                   `json:"destination_payment"`
 	ID                 string                    `json:"id"`
@@ -105,12 +107,4 @@ func (d *TransferDestination) UnmarshalJSON(data []byte) error {
 
 	*d = TransferDestination(v)
 	return json.Unmarshal(data, &d.Account)
-}
-
-// MarshalJSON handles serialization of a TransferDestination.
-// This custom marshaling is needed because we can only send a string
-// ID as a destination, even though it can be expanded to a full
-// object when retrieving
-func (d *TransferDestination) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.ID)
 }

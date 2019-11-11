@@ -2,6 +2,27 @@ package stripe
 
 import "encoding/json"
 
+// IssuingCardPINStatus is the list of possible values for the status field of a Card PIN.
+type IssuingCardPINStatus string
+
+// List of values that IssuingCardPINStatus can take.
+const (
+	IssuingCardPINStatusActive  IssuingCardPINStatus = "active"
+	IssuingCardPINStatusBlocked IssuingCardPINStatus = "blocked"
+)
+
+// IssuingCardReplacementReason is the list of possible values for the replacement reason on an
+// issuing card.
+type IssuingCardReplacementReason string
+
+// List of values that IssuingCardReplacementReason can take.
+const (
+	IssuingCardReplacementReasonDamage     IssuingCardReplacementReason = "damage"
+	IssuingCardReplacementReasonExpiration IssuingCardReplacementReason = "expiration"
+	IssuingCardReplacementReasonLoss       IssuingCardReplacementReason = "loss"
+	IssuingCardReplacementReasonTheft      IssuingCardReplacementReason = "theft"
+)
+
 // IssuingCardShippingStatus is the list of possible values for the shipping status
 // on an issuing card.
 type IssuingCardShippingStatus string
@@ -45,12 +66,37 @@ const (
 	IssuingCardTypeVirtual  IssuingCardType = "virtual"
 )
 
+// IssuingSpendingLimitInterval is the list of possible values for the interval of a given
+// spending limit on an issuing card or cardholder.
+type IssuingSpendingLimitInterval string
+
+// List of values that IssuingCardShippingStatus can take.
+const (
+	IssuingSpendingLimitIntervalAllTime          IssuingSpendingLimitInterval = "all_time"
+	IssuingSpendingLimitIntervalDaily            IssuingSpendingLimitInterval = "daily"
+	IssuingSpendingLimitIntervalMonthly          IssuingSpendingLimitInterval = "monthly"
+	IssuingSpendingLimitIntervalPerAuthorization IssuingSpendingLimitInterval = "per_authorization"
+	IssuingSpendingLimitIntervalWeekly           IssuingSpendingLimitInterval = "weekly"
+	IssuingSpendingLimitIntervalYearly           IssuingSpendingLimitInterval = "yearly"
+)
+
+// IssuingAuthorizationControlsSpendingLimitsParams is the set of parameters that can be used for
+// the spending limits associated with a given issuing card or cardholder.
+type IssuingAuthorizationControlsSpendingLimitsParams struct {
+	Amount     *int64    `form:"amount"`
+	Categories []*string `form:"categories"`
+	Interval   *string   `form:"interval"`
+}
+
 // AuthorizationControlsParams is the set of parameters that can be used for the shipping parameter.
 type AuthorizationControlsParams struct {
-	AllowedCategories []*string `form:"allowed_categories"`
-	BlockedCategories []*string `form:"blocked_categories"`
-	MaxAmount         *int64    `form:"max_amount"`
-	MaxApprovals      *int64    `form:"max_approvals"`
+	AllowedCategories []*string                                           `form:"allowed_categories"`
+	BlockedCategories []*string                                           `form:"blocked_categories"`
+	SpendingLimits    []*IssuingAuthorizationControlsSpendingLimitsParams `form:"spending_limits"`
+
+	// The following parameters are considered deprecated and only apply to issuing cards
+	MaxAmount    *int64 `form:"max_amount"`
+	MaxApprovals *int64 `form:"max_approvals"`
 }
 
 // IssuingCardShippingParams is the set of parameters that can be used for the shipping parameter.
@@ -68,6 +114,8 @@ type IssuingCardParams struct {
 	Cardholder            *string                      `form:"cardholder"`
 	Currency              *string                      `form:"currency"`
 	Name                  *string                      `form:"name"`
+	ReplacementFor        *string                      `form:"replacement_for"`
+	ReplacementReason     *string                      `form:"replacement_reason"`
 	Status                *string                      `form:"status"`
 	Shipping              *IssuingCardShippingParams   `form:"shipping"`
 	Type                  *string                      `form:"type"`
@@ -81,6 +129,7 @@ type IssuingCardListParams struct {
 	CreatedRange *RangeQueryParams `form:"created"`
 	ExpMonth     *int64            `form:"exp_month"`
 	ExpYear      *int64            `form:"exp_year"`
+	Name         *string           `form:"name"`
 	Last4        *string           `form:"last4"`
 	Source       *string           `form:"source"`
 	Status       *string           `form:"status"`
@@ -93,17 +142,34 @@ type IssuingCardDetails struct {
 	CVC      string       `json:"cvc"`
 	ExpMonth *string      `form:"exp_month"`
 	ExpYear  *string      `form:"exp_year"`
-	Number   string       `json:"type"`
+	Number   string       `json:"number"`
 	Object   string       `json:"object"`
 }
 
+// IssuingAuthorizationControlsSpendingLimits is the resource representing spending limits
+// associated with a card or cardholder.
+type IssuingAuthorizationControlsSpendingLimits struct {
+	Amount     int64                        `json:"amount"`
+	Categories []string                     `json:"categories"`
+	Interval   IssuingSpendingLimitInterval `json:"interval"`
+}
+
 // IssuingCardAuthorizationControls is the resource representing authorization controls on an issuing card.
+// TODO: Rename to IssuingAuthorizationControls in the next major
 type IssuingCardAuthorizationControls struct {
-	AllowedCategories []string `json:"allowed_categories"`
-	BlockedCategories []string `json:"blocked_categories"`
-	Currency          Currency `json:"currency"`
-	MaxAmount         int64    `json:"max_amount"`
-	MaxApprovals      int64    `json:"max_approvals"`
+	AllowedCategories []string                                      `json:"allowed_categories"`
+	BlockedCategories []string                                      `json:"blocked_categories"`
+	SpendingLimits    []*IssuingAuthorizationControlsSpendingLimits `json:"spending_limits"`
+
+	// The properties below are considered deprecated and can only be used for an issuing card.
+	Currency     Currency `json:"currency"`
+	MaxAmount    int64    `json:"max_amount"`
+	MaxApprovals int64    `json:"max_approvals"`
+}
+
+// IssuingCardPIN contains data about the Card's PIN.
+type IssuingCardPIN struct {
+	Status IssuingCardPINStatus `json:"status"`
 }
 
 // IssuingCardShipping is the resource representing shipping on an issuing card.
@@ -133,6 +199,9 @@ type IssuingCard struct {
 	Metadata              map[string]string                 `json:"metadata"`
 	Name                  string                            `json:"name"`
 	Object                string                            `json:"object"`
+	PIN                   *IssuingCardPIN                   `json:"pin"`
+	ReplacementFor        *IssuingCard                      `json:"replacement_for"`
+	ReplacementReason     IssuingCardReplacementReason      `json:"replacement_reason"`
 	Shipping              *IssuingCardShipping              `json:"shipping"`
 	Status                IssuingCardStatus                 `json:"status"`
 	Type                  IssuingCardType                   `json:"type"`

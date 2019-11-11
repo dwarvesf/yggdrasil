@@ -42,7 +42,7 @@ func (mg *MailgunImpl) GetRoutes(limit, skip int) (int, []Route, error) {
 		r.addParameter("skip", strconv.Itoa(skip))
 	}
 	r.setClient(mg.Client())
-	r.setBasicAuth(basicAuthUser, mg.ApiKey())
+	r.setBasicAuth(basicAuthUser, mg.APIKey())
 	var envelope struct {
 		TotalCount int     `json:"total_count"`
 		Items      []Route `json:"items"`
@@ -59,10 +59,10 @@ func (mg *MailgunImpl) GetRoutes(limit, skip int) (int, []Route, error) {
 // The route structure you provide serves as a template, and
 // only a subset of the fields influence the operation.
 // See the Route structure definition for more details.
-func (mg *MailgunImpl) CreateRoute(prototype Route) (Route, error) {
+func (mg *MailgunImpl) CreateRoute(prototype Route) (_ignored Route, err error) {
 	r := newHTTPRequest(generatePublicApiUrl(mg, routesEndpoint))
 	r.setClient(mg.Client())
-	r.setBasicAuth(basicAuthUser, mg.ApiKey())
+	r.setBasicAuth(basicAuthUser, mg.APIKey())
 	p := newUrlEncodedPayload()
 	p.addValue("priority", strconv.Itoa(prototype.Priority))
 	p.addValue("description", prototype.Description)
@@ -74,7 +74,9 @@ func (mg *MailgunImpl) CreateRoute(prototype Route) (Route, error) {
 		Message string `json:"message"`
 		*Route  `json:"route"`
 	}
-	err := postResponseFromJSON(r, p, &envelope)
+	if err = postResponseFromJSON(r, p, &envelope); err != nil {
+		return _ignored, err
+	}
 	return *envelope.Route, err
 }
 
@@ -84,7 +86,7 @@ func (mg *MailgunImpl) CreateRoute(prototype Route) (Route, error) {
 func (mg *MailgunImpl) DeleteRoute(id string) error {
 	r := newHTTPRequest(generatePublicApiUrl(mg, routesEndpoint) + "/" + id)
 	r.setClient(mg.Client())
-	r.setBasicAuth(basicAuthUser, mg.ApiKey())
+	r.setBasicAuth(basicAuthUser, mg.APIKey())
 	_, err := makeDeleteRequest(r)
 	return err
 }
@@ -93,7 +95,7 @@ func (mg *MailgunImpl) DeleteRoute(id string) error {
 func (mg *MailgunImpl) GetRouteByID(id string) (Route, error) {
 	r := newHTTPRequest(generatePublicApiUrl(mg, routesEndpoint) + "/" + id)
 	r.setClient(mg.Client())
-	r.setBasicAuth(basicAuthUser, mg.ApiKey())
+	r.setBasicAuth(basicAuthUser, mg.APIKey())
 	var envelope struct {
 		Message string `json:"message"`
 		*Route  `json:"route"`
@@ -112,7 +114,7 @@ func (mg *MailgunImpl) GetRouteByID(id string) (Route, error) {
 func (mg *MailgunImpl) UpdateRoute(id string, route Route) (Route, error) {
 	r := newHTTPRequest(generatePublicApiUrl(mg, routesEndpoint) + "/" + id)
 	r.setClient(mg.Client())
-	r.setBasicAuth(basicAuthUser, mg.ApiKey())
+	r.setBasicAuth(basicAuthUser, mg.APIKey())
 	p := newUrlEncodedPayload()
 	if route.Priority != 0 {
 		p.addValue("priority", strconv.Itoa(route.Priority))

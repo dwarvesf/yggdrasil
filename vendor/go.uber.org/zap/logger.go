@@ -22,6 +22,7 @@ package zap
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strings"
@@ -30,10 +31,13 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// A Logger provides fast, leveled, structured logging. All methods are safe for
-// concurrent use.
+// A Logger provides fast, leveled, structured logging. All methods are safe
+// for concurrent use.
 //
-// If you'd prefer a slower but less verbose logger, see the SugaredLogger.
+// The Logger is designed for contexts in which every microsecond and every
+// allocation matters, so its API intentionally favors performance and type
+// safety over brevity. For most applications, the SugaredLogger strikes a
+// better balance between performance and ergonomics.
 type Logger struct {
 	core zapcore.Core
 
@@ -48,15 +52,18 @@ type Logger struct {
 }
 
 // New constructs a new Logger from the provided zapcore.Core and Options. If
-// the passed zapcore.Core is nil, we fall back to using a no-op
+// the passed zapcore.Core is nil, it falls back to using a no-op
 // implementation.
 //
 // This is the most flexible way to construct a Logger, but also the most
-// verbose. For typical use cases, NewProduction and NewDevelopment are more
-// convenient.
+// verbose. For typical use cases, the highly-opinionated presets
+// (NewProduction, NewDevelopment, and NewExample) or the Config struct are
+// more convenient.
+//
+// For sample code, see the package-level AdvancedConfiguration example.
 func New(core zapcore.Core, options ...Option) *Logger {
 	if core == nil {
-		core = zapcore.NewNopCore()
+		return NewNop()
 	}
 	log := &Logger{
 		core:        core,
@@ -64,6 +71,19 @@ func New(core zapcore.Core, options ...Option) *Logger {
 		addStack:    zapcore.FatalLevel + 1,
 	}
 	return log.WithOptions(options...)
+}
+
+// NewNop returns a no-op Logger. It never writes out logs or internal errors,
+// and it never runs user-defined hooks.
+//
+// Using WithOptions to replace the Core or error output of a no-op Logger can
+// re-enable logging.
+func NewNop() *Logger {
+	return &Logger{
+		core:        zapcore.NewNopCore(),
+		errorOutput: zapcore.AddSync(ioutil.Discard),
+		addStack:    zapcore.FatalLevel + 1,
+	}
 }
 
 // NewProduction builds a sensible production Logger that writes InfoLevel and
@@ -82,7 +102,27 @@ func NewDevelopment(options ...Option) (*Logger, error) {
 	return NewDevelopmentConfig().Build(options...)
 }
 
-// Sugar converts a Logger to a SugaredLogger.
+// NewExample builds a Logger that's designed for use in zap's testable
+// examples. It writes DebugLevel and above logs to standard out as JSON, but
+// omits the timestamp and calling function to keep example output
+// short and deterministic.
+func NewExample(options ...Option) *Logger {
+	encoderCfg := zapcore.EncoderConfig{
+		MessageKey:     "msg",
+		LevelKey:       "level",
+		NameKey:        "logger",
+		EncodeLevel:    zapcore.LowercaseLevelEncoder,
+		EncodeTime:     zapcore.ISO8601TimeEncoder,
+		EncodeDuration: zapcore.StringDurationEncoder,
+	}
+	core := zapcore.NewCore(zapcore.NewJSONEncoder(encoderCfg), os.Stdout, DebugLevel)
+	return New(core).WithOptions(options...)
+}
+
+// Sugar wraps the Logger to provide a more ergonomic, but slightly slower,
+// API. Sugaring a Logger is quite inexpensive, so it's reasonable for a
+// single application to use both Loggers and SugaredLoggers, converting
+// between them on the boundaries of performance-sensitive code.
 func (log *Logger) Sugar() *SugaredLogger {
 	core := log.clone()
 	core.callerSkip += 2
@@ -90,7 +130,7 @@ func (log *Logger) Sugar() *SugaredLogger {
 }
 
 // Named adds a new path segment to the logger's name. Segments are joined by
-// periods.
+// periods. By default, Loggers are unnamed.
 func (log *Logger) Named(s string) *Logger {
 	if s == "" {
 		return log
@@ -116,7 +156,7 @@ func (log *Logger) WithOptions(opts ...Option) *Logger {
 
 // With creates a child logger and adds structured context to it. Fields added
 // to the child don't affect the parent, and vice versa.
-func (log *Logger) With(fields ...zapcore.Field) *Logger {
+func (log *Logger) With(fields ...Field) *Logger {
 	if len(fields) == 0 {
 		return log
 	}
@@ -134,7 +174,7 @@ func (log *Logger) Check(lvl zapcore.Level, msg string) *zapcore.CheckedEntry {
 
 // Debug logs a message at DebugLevel. The message includes any fields passed
 // at the log site, as well as any fields accumulated on the logger.
-func (log *Logger) Debug(msg string, fields ...zapcore.Field) {
+func (log *Logger) Debug(msg string, fields ...Field) {
 	if ce := log.check(DebugLevel, msg); ce != nil {
 		ce.Write(fields...)
 	}
@@ -142,7 +182,7 @@ func (log *Logger) Debug(msg string, fields ...zapcore.Field) {
 
 // Info logs a message at InfoLevel. The message includes any fields passed
 // at the log site, as well as any fields accumulated on the logger.
-func (log *Logger) Info(msg string, fields ...zapcore.Field) {
+func (log *Logger) Info(msg string, fields ...Field) {
 	if ce := log.check(InfoLevel, msg); ce != nil {
 		ce.Write(fields...)
 	}
@@ -150,7 +190,7 @@ func (log *Logger) Info(msg string, fields ...zapcore.Field) {
 
 // Warn logs a message at WarnLevel. The message includes any fields passed
 // at the log site, as well as any fields accumulated on the logger.
-func (log *Logger) Warn(msg string, fields ...zapcore.Field) {
+func (log *Logger) Warn(msg string, fields ...Field) {
 	if ce := log.check(WarnLevel, msg); ce != nil {
 		ce.Write(fields...)
 	}
@@ -158,19 +198,19 @@ func (log *Logger) Warn(msg string, fields ...zapcore.Field) {
 
 // Error logs a message at ErrorLevel. The message includes any fields passed
 // at the log site, as well as any fields accumulated on the logger.
-func (log *Logger) Error(msg string, fields ...zapcore.Field) {
+func (log *Logger) Error(msg string, fields ...Field) {
 	if ce := log.check(ErrorLevel, msg); ce != nil {
 		ce.Write(fields...)
 	}
 }
 
-// DPanic logs a message at DPanicLevel. The message includes any fields passed
-// at the log site, as well as any fields accumulated on the logger.
+// DPanic logs a message at DPanicLevel. The message includes any fields
+// passed at the log site, as well as any fields accumulated on the logger.
 //
 // If the logger is in development mode, it then panics (DPanic means
 // "development panic"). This is useful for catching errors that are
 // recoverable, but shouldn't ever happen.
-func (log *Logger) DPanic(msg string, fields ...zapcore.Field) {
+func (log *Logger) DPanic(msg string, fields ...Field) {
 	if ce := log.check(DPanicLevel, msg); ce != nil {
 		ce.Write(fields...)
 	}
@@ -180,7 +220,7 @@ func (log *Logger) DPanic(msg string, fields ...zapcore.Field) {
 // at the log site, as well as any fields accumulated on the logger.
 //
 // The logger then panics, even if logging at PanicLevel is disabled.
-func (log *Logger) Panic(msg string, fields ...zapcore.Field) {
+func (log *Logger) Panic(msg string, fields ...Field) {
 	if ce := log.check(PanicLevel, msg); ce != nil {
 		ce.Write(fields...)
 	}
@@ -189,14 +229,21 @@ func (log *Logger) Panic(msg string, fields ...zapcore.Field) {
 // Fatal logs a message at FatalLevel. The message includes any fields passed
 // at the log site, as well as any fields accumulated on the logger.
 //
-// The logger then calls os.Exit(1), even if logging at FatalLevel is disabled.
-func (log *Logger) Fatal(msg string, fields ...zapcore.Field) {
+// The logger then calls os.Exit(1), even if logging at FatalLevel is
+// disabled.
+func (log *Logger) Fatal(msg string, fields ...Field) {
 	if ce := log.check(FatalLevel, msg); ce != nil {
 		ce.Write(fields...)
 	}
 }
 
-// Core returns the underlying zapcore.Core.
+// Sync calls the underlying Core's Sync method, flushing any buffered log
+// entries. Applications should take care to call Sync before exiting.
+func (log *Logger) Sync() error {
+	return log.core.Sync()
+}
+
+// Core returns the Logger's underlying zapcore.Core.
 func (log *Logger) Core() zapcore.Core {
 	return log.core
 }

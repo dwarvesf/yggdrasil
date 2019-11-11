@@ -3,16 +3,15 @@ package stripe
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
-	"os"
 	"os/exec"
 	"reflect"
 	"runtime"
@@ -28,11 +27,21 @@ import (
 //
 
 const (
+	// APIVersion is the currently supported API version
+	APIVersion string = "2019-10-17"
+
 	// APIBackend is a constant representing the API service backend.
 	APIBackend SupportedBackend = "api"
 
 	// APIURL is the URL of the API service backend.
-	APIURL string = "https://api.stripe.com/v1"
+	APIURL string = "https://api.stripe.com"
+
+	// ConnectURL is the URL for OAuth.
+	ConnectURL string = "https://connect.stripe.com"
+
+	// ConnectBackend is a constant representing the connect service backend for
+	// OAuth.
+	ConnectBackend SupportedBackend = "connect"
 
 	// UnknownPlatform is the string returned as the system name if we couldn't get
 	// one from `uname`.
@@ -42,30 +51,24 @@ const (
 	UploadsBackend SupportedBackend = "uploads"
 
 	// UploadsURL is the URL of the uploads service backend.
-	UploadsURL string = "https://uploads.stripe.com/v1"
+	UploadsURL string = "https://files.stripe.com"
 )
 
 //
 // Public variables
 //
 
+// EnableTelemetry is a global override for enabling client telemetry, which
+// sends request performance metrics to Stripe via the `X-Stripe-Client-Telemetry`
+// header. If set to true, all clients will send telemetry metrics. Defaults to
+// true.
+//
+// Telemetry can also be disabled on a per-client basis by instead creating a
+// `BackendConfig` with `EnableTelemetry: false`.
+var EnableTelemetry = true
+
 // Key is the Stripe API key used globally in the binding.
 var Key string
-
-// LogLevel is the logging level for this library.
-// 0: no logging
-// 1: errors only
-// 2: errors + informational (default)
-// 3: errors + informational + debug
-var LogLevel = 2
-
-// Logger controls how stripe performs logging at a package level. It is useful
-// to customise if you need it prefixed for your application to meet other
-// requirements.
-//
-// This Logger will be inherited by any backends created by default, but will
-// be overridden if a backend is created with GetBackendWithConfig.
-var Logger Printfer
 
 //
 // Public types
@@ -106,10 +109,26 @@ type Backend interface {
 
 // BackendConfig is used to configure a new Stripe backend.
 type BackendConfig struct {
+	// EnableTelemetry allows request metrics (request id and duration) to be sent
+	// to Stripe in subsequent requests via the `X-Stripe-Client-Telemetry` header.
+	//
+	// Defaults to false.
+	EnableTelemetry bool
+
 	// HTTPClient is an HTTP client instance to use when making API requests.
 	//
 	// If left unset, it'll be set to a default HTTP client for the package.
 	HTTPClient *http.Client
+
+	// LeveledLogger is the logger that the backend will use to log errors,
+	// warnings, and informational messages.
+	//
+	// LeveledLoggerInterface is implemented by LeveledLogger, and one can be
+	// initialized at the desired level of logging.  LeveledLoggerInterface
+	// also provides out-of-the-box compatibility with a Logrus Logger, but may
+	// require a thin shim for use with other logging libraries that use less
+	// standard conventions like Zap.
+	LeveledLogger LeveledLoggerInterface
 
 	// LogLevel is the logging level of the library and defined by:
 	//
@@ -120,11 +139,15 @@ type BackendConfig struct {
 	//
 	// Defaults to 0 (no logging), so please make sure to set this if you want
 	// to see logging output in your custom configuration.
+	//
+	// Deprecated: Logging should be configured with LeveledLogger instead.
 	LogLevel int
 
 	// Logger is where this backend will write its logs.
 	//
 	// If left unset, it'll be set to Logger.
+	//
+	// Deprecated: Logging should be configured with LeveledLogger instead.
 	Logger Printfer
 
 	// MaxNetworkRetries sets maximum number of times that the library will
@@ -149,15 +172,18 @@ type BackendImplementation struct {
 	Type              SupportedBackend
 	URL               string
 	HTTPClient        *http.Client
+	LeveledLogger     LeveledLoggerInterface
 	MaxNetworkRetries int
-	LogLevel          int
-	Logger            Printfer
+
+	enableTelemetry bool
 
 	// networkRetriesSleep indicates whether the backend should use the normal
 	// sleep between retries.
 	//
 	// See also SetNetworkRetriesSleep.
 	networkRetriesSleep bool
+
+	requestMetricsBuffer chan requestMetrics
 }
 
 // Call is the Backend.Call implementation for invoking Stripe APIs.
@@ -240,18 +266,16 @@ func (s *BackendImplementation) NewRequest(method, path, key, contentType string
 	// Body is set later by `Do`.
 	req, err := http.NewRequest(method, path, nil)
 	if err != nil {
-		if s.LogLevel > 0 {
-			s.Logger.Printf("Cannot create Stripe request: %v\n", err)
-		}
+		s.LeveledLogger.Errorf("Cannot create Stripe request: %v", err)
 		return nil, err
 	}
 
 	authorization := "Bearer " + key
 
 	req.Header.Add("Authorization", authorization)
-	req.Header.Add("Stripe-Version", apiversion)
-	req.Header.Add("User-Agent", encodedUserAgent)
 	req.Header.Add("Content-Type", contentType)
+	req.Header.Add("Stripe-Version", APIVersion)
+	req.Header.Add("User-Agent", encodedUserAgent)
 	req.Header.Add("X-Stripe-Client-User-Agent", encodedStripeUserAgent)
 
 	if params != nil {
@@ -276,7 +300,8 @@ func (s *BackendImplementation) NewRequest(method, path, key, contentType string
 
 		for k, v := range params.Headers {
 			for _, line := range v {
-				req.Header.Add(k, line)
+				// Use Set to override the default value possibly set before
+				req.Header.Set(k, line)
 			}
 		}
 	}
@@ -288,12 +313,28 @@ func (s *BackendImplementation) NewRequest(method, path, key, contentType string
 // the backend's HTTP client to execute the request and unmarshals the response
 // into v. It also handles unmarshaling errors returned by the API.
 func (s *BackendImplementation) Do(req *http.Request, body *bytes.Buffer, v interface{}) error {
-	if s.LogLevel > 1 {
-		s.Logger.Printf("Requesting %v %v%v\n", req.Method, req.URL.Host, req.URL.Path)
+	s.LeveledLogger.Infof("Requesting %v %v%v\n", req.Method, req.URL.Host, req.URL.Path)
+
+	if s.enableTelemetry {
+		select {
+		case metrics := <-s.requestMetricsBuffer:
+			metricsJSON, err := json.Marshal(&requestTelemetry{LastRequestMetrics: metrics})
+			if err == nil {
+				req.Header.Set("X-Stripe-Client-Telemetry", string(metricsJSON))
+			} else {
+				s.LeveledLogger.Warnf("Unable to encode client telemetry: %v", err)
+			}
+		default:
+			// There are no metrics available, so don't send any.
+			// This default case  needs to be here to prevent Do from blocking on an
+			// empty requestMetricsBuffer.
+		}
 	}
 
 	var res *http.Response
 	var err error
+	var requestDuration time.Duration
+	var resBody []byte
 	for retry := 0; ; {
 		start := time.Now()
 
@@ -324,71 +365,101 @@ func (s *BackendImplementation) Do(req *http.Request, body *bytes.Buffer, v inte
 			reader := bytes.NewReader(body.Bytes())
 
 			req.Body = nopReadCloser{reader}
+
+			// And also add the same thing to `Request.GetBody`, which allows
+			// `net/http` to get a new body in cases like a redirect. This is
+			// usually not used, but it doesn't hurt to set it in case it's
+			// needed. See:
+			//
+			//     https://github.com/stripe/stripe-go/issues/710
+			//
+			req.GetBody = func() (io.ReadCloser, error) {
+				reader := bytes.NewReader(body.Bytes())
+				return nopReadCloser{reader}, nil
+			}
 		}
 
 		res, err = s.HTTPClient.Do(req)
 
-		if s.LogLevel > 2 {
-			s.Logger.Printf("Request completed in %v (retry: %v)\n",
-				time.Since(start), retry)
+		requestDuration = time.Since(start)
+		s.LeveledLogger.Infof("Request completed in %v (retry: %v)", requestDuration, retry)
+
+		if err == nil {
+			resBody, err = ioutil.ReadAll(res.Body)
+			res.Body.Close()
 		}
 
-		// If the response was okay, we're done, and it's safe to break out of
-		// the retry loop.
-		if !s.shouldRetry(err, res, retry) {
-			break
-		}
-
-		resBody, err := ioutil.ReadAll(res.Body)
-		res.Body.Close()
 		if err != nil {
-			if s.LogLevel > 0 {
-				s.Logger.Printf("Cannot read response: %v\n", err)
+			s.LeveledLogger.Errorf("Request failed with error: %v", err)
+		} else if res.StatusCode >= 400 {
+			err = s.ResponseToError(res, resBody)
+
+			if stripeErr, ok := err.(*Error); ok {
+				// The Stripe API makes a distinction between errors that were
+				// caused by invalid parameters or something else versus those
+				// that occurred *despite* valid parameters, the latter coming
+				// back with status 402.
+				//
+				// On a 402, log to info so as to not make an integration's log
+				// noisy with error messages that they don't have much control
+				// over.
+				//
+				// Note I use the constant 402 instead of an `http.Status*`
+				// constant because technically 402 is "Payment required". The
+				// Stripe API doesn't comply to the letter of the specification
+				// and uses it in a broader sense.
+				if res.StatusCode == 402 {
+					s.LeveledLogger.Infof("User-compelled request error from Stripe (status %v): %v",
+						res.StatusCode, stripeErr)
+				} else {
+					s.LeveledLogger.Errorf("Request error from Stripe (status %v): %v",
+						res.StatusCode, stripeErr)
+				}
+			} else {
+				s.LeveledLogger.Errorf("Error decoding error from Stripe: %v", err)
 			}
-			return err
 		}
 
-		if s.LogLevel > 0 {
-			s.Logger.Printf("Request failed with: %s (error: %v)\n", string(resBody), err)
+		// If the response was okay, or an error that shouldn't be retried,
+		// we're done, and it's safe to leave the retry loop.
+		if !s.shouldRetry(err, req, res, retry) {
+			break
 		}
 
 		sleepDuration := s.sleepTime(retry)
 		retry++
 
-		if s.LogLevel > 1 {
-			s.Logger.Printf("Initiating retry %v for request %v %v%v after sleeping %v\n",
-				retry, req.Method, req.URL.Host, req.URL.Path, sleepDuration)
-		}
+		s.LeveledLogger.Warnf("Initiating retry %v for request %v %v%v after sleeping %v",
+			retry, req.Method, req.URL.Host, req.URL.Path, sleepDuration)
 
 		time.Sleep(sleepDuration)
 	}
 
-	if err != nil {
-		if s.LogLevel > 0 {
-			s.Logger.Printf("Request failed: %v\n", err)
+	if s.enableTelemetry && res != nil {
+		reqID := res.Header.Get("Request-Id")
+		if len(reqID) > 0 {
+			metrics := requestMetrics{
+				RequestDurationMS: int(requestDuration / time.Millisecond),
+				RequestID:         reqID,
+			}
+
+			// If the metrics buffer is full, discard the new metrics. Otherwise, add
+			// them to the buffer.
+			select {
+			case s.requestMetricsBuffer <- metrics:
+			default:
+			}
 		}
+	}
+
+	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
 
-	resBody, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		if s.LogLevel > 0 {
-			s.Logger.Printf("Cannot read response: %v\n", err)
-		}
-		return err
-	}
-
-	if res.StatusCode >= 400 {
-		return s.ResponseToError(res, resBody)
-	}
-
-	if s.LogLevel > 2 {
-		s.Logger.Printf("Response: %s\n", string(resBody))
-	}
+	s.LeveledLogger.Debugf("Response: %s\n", string(resBody))
 
 	if v != nil {
-		return json.Unmarshal(resBody, v)
+		return s.UnmarshalJSONVerbose(res.StatusCode, resBody, v)
 	}
 
 	return nil
@@ -396,81 +467,53 @@ func (s *BackendImplementation) Do(req *http.Request, body *bytes.Buffer, v inte
 
 // ResponseToError converts a stripe response to an Error.
 func (s *BackendImplementation) ResponseToError(res *http.Response, resBody []byte) error {
-	// for some odd reason, the Erro structure doesn't unmarshal
-	// initially I thought it was because it's a struct inside of a struct
-	// but even after trying that, it still didn't work
-	// so unmarshalling to a map for now and parsing the results manually
-	// but should investigate later
-	var errMap map[string]interface{}
-
-	err := json.Unmarshal(resBody, &errMap)
-	if err != nil {
-		return err
+	var raw rawError
+	if s.Type == ConnectBackend {
+		// If this is an OAuth request, deserialize as Error because OAuth errors
+		// are a different shape from the standard API errors.
+		var topLevelError rawErrorInternal
+		if err := s.UnmarshalJSONVerbose(res.StatusCode, resBody, &topLevelError); err != nil {
+			return err
+		}
+		raw.E = &topLevelError
+	} else {
+		if err := s.UnmarshalJSONVerbose(res.StatusCode, resBody, &raw); err != nil {
+			return err
+		}
 	}
 
-	e, ok := errMap["error"]
-	if !ok {
+	// no error in resBody
+	if raw.E == nil {
 		err := errors.New(string(resBody))
-		if s.LogLevel > 0 {
-			s.Logger.Printf("Unparsable error returned from Stripe: %v\n", err)
-		}
 		return err
 	}
+	raw.E.HTTPStatusCode = res.StatusCode
+	raw.E.RequestID = res.Header.Get("Request-Id")
 
-	root := e.(map[string]interface{})
-
-	stripeErr := &Error{
-		Type:           ErrorType(root["type"].(string)),
-		Msg:            root["message"].(string),
-		HTTPStatusCode: res.StatusCode,
-		RequestID:      res.Header.Get("Request-Id"),
-	}
-
-	if code, ok := root["code"]; ok {
-		stripeErr.Code = ErrorCode(code.(string))
-	}
-
-	if param, ok := root["param"]; ok {
-		stripeErr.Param = param.(string)
-	}
-
-	if charge, ok := root["charge"]; ok {
-		stripeErr.ChargeID = charge.(string)
-	}
-
-	switch stripeErr.Type {
+	var typedError error
+	switch raw.E.Type {
 	case ErrorTypeAPI:
-		stripeErr.Err = &APIError{stripeErr: stripeErr}
-
+		typedError = &APIError{stripeErr: raw.E.Error}
 	case ErrorTypeAPIConnection:
-		stripeErr.Err = &APIConnectionError{stripeErr: stripeErr}
-
+		typedError = &APIConnectionError{stripeErr: raw.E.Error}
 	case ErrorTypeAuthentication:
-		stripeErr.Err = &AuthenticationError{stripeErr: stripeErr}
-
+		typedError = &AuthenticationError{stripeErr: raw.E.Error}
 	case ErrorTypeCard:
-		cardErr := &CardError{stripeErr: stripeErr}
-		stripeErr.Err = cardErr
-
-		if declineCode, ok := root["decline_code"]; ok {
-			cardErr.DeclineCode = declineCode.(string)
+		cardErr := &CardError{stripeErr: raw.E.Error}
+		if raw.E.DeclineCode != nil {
+			cardErr.DeclineCode = *raw.E.DeclineCode
 		}
-
+		typedError = cardErr
 	case ErrorTypeInvalidRequest:
-		stripeErr.Err = &InvalidRequestError{stripeErr: stripeErr}
-
+		typedError = &InvalidRequestError{stripeErr: raw.E.Error}
 	case ErrorTypePermission:
-		stripeErr.Err = &PermissionError{stripeErr: stripeErr}
-
+		typedError = &PermissionError{stripeErr: raw.E.Error}
 	case ErrorTypeRateLimit:
-		stripeErr.Err = &RateLimitError{stripeErr: stripeErr}
+		typedError = &RateLimitError{stripeErr: raw.E.Error}
 	}
+	raw.E.Err = typedError
 
-	if s.LogLevel > 0 {
-		s.Logger.Printf("Error encountered from Stripe: %v\n", stripeErr)
-	}
-
-	return stripeErr
+	return raw.E.Error
 }
 
 // SetMaxNetworkRetries sets max number of retries on failed requests
@@ -489,21 +532,92 @@ func (s *BackendImplementation) SetNetworkRetriesSleep(sleep bool) {
 	s.networkRetriesSleep = sleep
 }
 
+// UnmarshalJSONVerbose unmarshals JSON, but in case of a failure logs and
+// produces a more descriptive error.
+func (s *BackendImplementation) UnmarshalJSONVerbose(statusCode int, body []byte, v interface{}) error {
+	err := json.Unmarshal(body, v)
+	if err != nil {
+		// If we got invalid JSON back then something totally unexpected is
+		// happening (caused by a bug on the server side). Put a sample of the
+		// response body into the error message so we can get a better feel for
+		// what the problem was.
+		bodySample := string(body)
+		if len(bodySample) > 500 {
+			bodySample = bodySample[0:500] + " ..."
+		}
+
+		// Make sure a multi-line response ends up all on one line
+		bodySample = strings.Replace(bodySample, "\n", "\\n", -1)
+
+		newErr := fmt.Errorf("Couldn't deserialize JSON (response status: %v, body sample: '%s'): %v",
+			statusCode, bodySample, err)
+		s.LeveledLogger.Errorf("%s", newErr.Error())
+		return newErr
+	}
+
+	return nil
+}
+
 // Checks if an error is a problem that we should retry on. This includes both
 // socket errors that may represent an intermittent problem and some special
 // HTTP statuses.
-func (s *BackendImplementation) shouldRetry(err error, resp *http.Response, numRetries int) bool {
+func (s *BackendImplementation) shouldRetry(err error, req *http.Request, resp *http.Response, numRetries int) bool {
 	if numRetries >= s.MaxNetworkRetries {
 		return false
 	}
 
-	if err != nil {
+	stripeErr, _ := err.(*Error)
+
+	// TODO: This retries any non-Stripe errors produced as part of the
+	// communication process. It generally works, but there are many errors
+	// that should *not* be retried. Try to make this more granular by
+	// including only connection errors, timeout errors, etc.
+	if stripeErr == nil && err != nil {
 		return true
 	}
 
+	// The API may ask us not to retry (e.g. if doing so would be a no-op), or
+	// advise us to retry (e.g. in cases of lock timeouts). Defer to those
+	// instructions if given.
+	if resp.Header.Get("Stripe-Should-Retry") == "false" {
+		return false
+	}
+	if resp.Header.Get("Stripe-Should-Retry") == "true" {
+		return true
+	}
+
+	// 409 Conflict
 	if resp.StatusCode == http.StatusConflict {
 		return true
 	}
+
+	// 429 Too Many Requests
+	//
+	// There are a few different problems that can lead to a 429. The most
+	// common is rate limiting, on which we *don't* want to retry because
+	// that'd likely contribute to more contention problems. However, some 429s
+	// are lock timeouts, which is when a request conflicted with another
+	// request or an internal process on some particular object. These 429s are
+	// safe to retry.
+	if resp.StatusCode == http.StatusTooManyRequests {
+		if stripeErr != nil && stripeErr.Code == ErrorCodeLockTimeout {
+			return true
+		}
+	}
+
+	// 500 Internal Server Error
+	//
+	// We only bother retrying these for non-POST requests. POSTs end up being
+	// cached by the idempotency layer so there's no purpose in retrying them.
+	if resp.StatusCode >= http.StatusInternalServerError && req.Method != http.MethodPost {
+		return true
+	}
+
+	// 503 Service Unavailable
+	if resp.StatusCode == http.StatusServiceUnavailable {
+		return true
+	}
+
 	return false
 }
 
@@ -537,13 +651,8 @@ func (s *BackendImplementation) sleepTime(numRetries int) time.Duration {
 
 // Backends are the currently supported endpoints.
 type Backends struct {
-	API, Uploads Backend
-	mu           sync.RWMutex
-}
-
-// Printfer is an interface to be implemented by Logger.
-type Printfer interface {
-	Printf(format string, v ...interface{})
+	API, Connect, Uploads Backend
+	mu                    sync.RWMutex
 }
 
 // SupportedBackend is an enumeration of supported Stripe endpoints.
@@ -568,6 +677,15 @@ func BoolValue(v *bool) bool {
 	return false
 }
 
+// BoolSlice returns a slice of bool pointers given a slice of bools.
+func BoolSlice(v []bool) []*bool {
+	out := make([]*bool, len(v))
+	for i := range v {
+		out[i] = &v[i]
+	}
+	return out
+}
+
 // Float64 returns a pointer to the float64 value passed in.
 func Float64(v float64) *float64 {
 	return &v
@@ -580,6 +698,15 @@ func Float64Value(v *float64) float64 {
 		return *v
 	}
 	return 0
+}
+
+// Float64Slice returns a slice of float64 pointers given a slice of float64s.
+func Float64Slice(v []float64) []*float64 {
+	out := make([]*float64, len(v))
+	for i := range v {
+		out[i] = &v[i]
+	}
+	return out
 }
 
 // FormatURLPath takes a format string (of the kind used in the fmt package)
@@ -614,6 +741,8 @@ func GetBackend(backendType SupportedBackend) Backend {
 	switch backendType {
 	case APIBackend:
 		backend = backends.API
+	case ConnectBackend:
+		backend = backends.Connect
 	case UploadsBackend:
 		backend = backends.Uploads
 	}
@@ -626,6 +755,7 @@ func GetBackend(backendType SupportedBackend) Backend {
 		backendType,
 		&BackendConfig{
 			HTTPClient:        httpClient,
+			LeveledLogger:     DefaultLeveledLogger,
 			LogLevel:          LogLevel,
 			Logger:            Logger,
 			MaxNetworkRetries: 0,
@@ -639,6 +769,8 @@ func GetBackend(backendType SupportedBackend) Backend {
 	switch backendType {
 	case APIBackend:
 		backends.API = backend
+	case ConnectBackend:
+		backends.Connect = backend
 	case UploadsBackend:
 		backends.Uploads = backend
 	}
@@ -654,8 +786,15 @@ func GetBackendWithConfig(backendType SupportedBackend, config *BackendConfig) B
 		config.HTTPClient = httpClient
 	}
 
-	if config.Logger == nil {
-		config.Logger = Logger
+	if config.LeveledLogger == nil {
+		if config.Logger == nil {
+			config.Logger = Logger
+		}
+
+		config.LeveledLogger = &leveledLoggerPrintferShim{
+			level:  printferLevel(config.LogLevel),
+			logger: config.Logger,
+		}
 	}
 
 	switch backendType {
@@ -664,10 +803,7 @@ func GetBackendWithConfig(backendType SupportedBackend, config *BackendConfig) B
 			config.URL = apiURL
 		}
 
-		// Add the /v1/ prefix because all client packages expect it. We should
-		// probably change this to just make it explicit wherever it's needed
-		// to fulfill the principle of least astonishment.
-		config.URL += "/v1"
+		config.URL = normalizeURL(config.URL)
 
 		return newBackendImplementation(backendType, config)
 
@@ -676,10 +812,16 @@ func GetBackendWithConfig(backendType SupportedBackend, config *BackendConfig) B
 			config.URL = uploadsURL
 		}
 
-		// Add the /v1/ prefix because all client packages expect it. We should
-		// probably change this to just make it explicit wherever it's needed
-		// to fulfill the principle of least astonishment.
-		config.URL += "/v1"
+		config.URL = normalizeURL(config.URL)
+
+		return newBackendImplementation(backendType, config)
+
+	case ConnectBackend:
+		if config.URL == "" {
+			config.URL = ConnectURL
+		}
+
+		config.URL = normalizeURL(config.URL)
 
 		return newBackendImplementation(backendType, config)
 	}
@@ -701,13 +843,25 @@ func Int64Value(v *int64) int64 {
 	return 0
 }
 
+// Int64Slice returns a slice of int64 pointers given a slice of int64s.
+func Int64Slice(v []int64) []*int64 {
+	out := make([]*int64, len(v))
+	for i := range v {
+		out[i] = &v[i]
+	}
+	return out
+}
+
 // NewBackends creates a new set of backends with the given HTTP client. You
 // should only need to use this for testing purposes or on App Engine.
 func NewBackends(httpClient *http.Client) *Backends {
-	config := &BackendConfig{HTTPClient: httpClient}
+	apiConfig := &BackendConfig{HTTPClient: httpClient}
+	connectConfig := &BackendConfig{HTTPClient: httpClient}
+	uploadConfig := &BackendConfig{HTTPClient: httpClient}
 	return &Backends{
-		API:     GetBackendWithConfig(APIBackend, config),
-		Uploads: GetBackendWithConfig(UploadsBackend, config),
+		API:     GetBackendWithConfig(APIBackend, apiConfig),
+		Connect: GetBackendWithConfig(ConnectBackend, connectConfig),
+		Uploads: GetBackendWithConfig(UploadsBackend, uploadConfig),
 	}
 }
 
@@ -746,9 +900,14 @@ func SetAppInfo(info *AppInfo) {
 
 // SetBackend sets the backend used in the binding.
 func SetBackend(backend SupportedBackend, b Backend) {
+	backends.mu.Lock()
+	defer backends.mu.Unlock()
+
 	switch backend {
 	case APIBackend:
 		backends.API = b
+	case ConnectBackend:
+		backends.Connect = b
 	case UploadsBackend:
 		backends.Uploads = b
 	}
@@ -775,17 +934,23 @@ func StringValue(v *string) string {
 	return ""
 }
 
+// StringSlice returns a slice of string pointers given a slice of strings.
+func StringSlice(v []string) []*string {
+	out := make([]*string, len(v))
+	for i := range v {
+		out[i] = &v[i]
+	}
+	return out
+}
+
 //
 // Private constants
 //
 
 const apiURL = "https://api.stripe.com"
 
-// apiversion is the currently supported API version
-const apiversion = "2018-08-23"
-
 // clientversion is the binding version
-const clientversion = "49.1.0"
+const clientversion = "66.1.1"
 
 // defaultHTTPTimeout is the default timeout on the http.Client used by the library.
 // This is chosen to be consistent with the other Stripe language libraries and
@@ -796,6 +961,10 @@ const defaultHTTPTimeout = 80 * time.Second
 // tries to send HTTP request again after network failure.
 const maxNetworkRetriesDelay = 5000 * time.Millisecond
 const minNetworkRetriesDelay = 500 * time.Millisecond
+
+// The number of requestMetric objects to buffer for client telemetry. When the
+// buffer is full, new requestMetrics are dropped.
+const telemetryBufferSize = 16
 
 const uploadsURL = "https://uploads.stripe.com"
 
@@ -825,6 +994,18 @@ type stripeClientUserAgent struct {
 	Uname           string   `json:"uname"`
 }
 
+// requestMetrics contains the id and duration of the last request sent
+type requestMetrics struct {
+	RequestDurationMS int    `json:"request_duration_ms"`
+	RequestID         string `json:"request_id"`
+}
+
+// requestTelemetry contains the payload sent in the
+// `X-Stripe-Client-Telemetry` header when BackendConfig.EnableTelemetry = true.
+type requestTelemetry struct {
+	LastRequestMetrics requestMetrics `json:"last_request_metrics"`
+}
+
 //
 // Private variables
 //
@@ -833,7 +1014,43 @@ var appInfo *AppInfo
 var backends Backends
 var encodedStripeUserAgent string
 var encodedUserAgent string
-var httpClient = &http.Client{Timeout: defaultHTTPTimeout}
+
+// The default HTTP client used for communication with any of Stripe's
+// backends.
+//
+// Can be overridden with the function `SetHTTPClient` or by setting the
+// `HTTPClient` value when using `BackendConfig`.
+var httpClient = &http.Client{
+	Timeout: defaultHTTPTimeout,
+
+	// There is a bug in Go's HTTP/2 implementation that occasionally causes it
+	// to send an empty body when it receives a `GOAWAY` message from a server:
+	//
+	//     https://github.com/golang/go/issues/32441
+	//
+	// This is particularly problematic for this library because the empty body
+	// results in no parameters being sent, which usually results in a 400,
+	// which is a status code expressly not covered by retry logic.
+	//
+	// The bug seems to be somewhat tricky to fix and hasn't seen any traction
+	// lately, so for now we're mitigating by disabling HTTP/2 in stripe-go by
+	// default. Users who like to live dangerously can still re-enable it by
+	// specifying a custom HTTP client. When the bug above is fixed, we can
+	// turn it back on.
+	//
+	// The particular methodology here for disabling HTTP/2 is a little
+	// confusing at first glance, but is recommended by the `net/http`
+	// documentation ("Programs that must disable HTTP/2 can do so by setting
+	// Transport.TLSNextProto (for clients) ... to a non-nil, empty map.")
+	//
+	// Note that the test suite still uses HTTP/2 to run as it specifies its
+	// own HTTP client with it enabled. See `testing/testing.go`.
+	//
+	// (Written 2019/07/24.)
+	Transport: &http.Transport{
+		TLSNextProto: make(map[string]func(string, *tls.Conn) http.RoundTripper),
+	},
+}
 
 //
 // Private functions
@@ -861,7 +1078,6 @@ func getUname() string {
 }
 
 func init() {
-	Logger = log.New(os.Stderr, "", log.LstdFlags)
 	initUserAgent()
 }
 
@@ -898,13 +1114,36 @@ func isHTTPWriteMethod(method string) bool {
 // The vast majority of the time you should be calling GetBackendWithConfig
 // instead of this function.
 func newBackendImplementation(backendType SupportedBackend, config *BackendConfig) Backend {
-	return &BackendImplementation{
-		HTTPClient:          config.HTTPClient,
-		LogLevel:            config.LogLevel,
-		Logger:              config.Logger,
-		MaxNetworkRetries:   config.MaxNetworkRetries,
-		Type:                backendType,
-		URL:                 config.URL,
-		networkRetriesSleep: true,
+	var requestMetricsBuffer chan requestMetrics
+	enableTelemetry := config.EnableTelemetry || EnableTelemetry
+
+	// only allocate the requestMetrics buffer if client telemetry is enabled.
+	if enableTelemetry {
+		requestMetricsBuffer = make(chan requestMetrics, telemetryBufferSize)
 	}
+
+	return &BackendImplementation{
+		HTTPClient:           config.HTTPClient,
+		LeveledLogger:        config.LeveledLogger,
+		MaxNetworkRetries:    config.MaxNetworkRetries,
+		Type:                 backendType,
+		URL:                  config.URL,
+		enableTelemetry:      enableTelemetry,
+		networkRetriesSleep:  true,
+		requestMetricsBuffer: requestMetricsBuffer,
+	}
+}
+
+func normalizeURL(url string) string {
+	// All paths include a leading slash, so to keep logs pretty, trim a
+	// trailing slash on the URL.
+	url = strings.TrimSuffix(url, "/")
+
+	// For a long time we had the `/v1` suffix as part of a configured URL
+	// rather than in the per-package URLs throughout the library. Continue
+	// to support this for the time being by stripping one that's been
+	// passed for better backwards compatibility.
+	url = strings.TrimSuffix(url, "/v1")
+
+	return url
 }

@@ -33,7 +33,10 @@ type EventRequest struct {
 
 // EventData is the unmarshalled object as a map.
 type EventData struct {
-	Object             map[string]interface{}
+	// Object is a raw mapping of the API resource contained in the event.
+	// Although marked with json:"-", it's still populated independently by
+	// a custom UnmarshalJSON implementation.
+	Object             map[string]interface{} `json:"-"`
 	PreviousAttributes map[string]interface{} `json:"previous_attributes"`
 	Raw                json.RawMessage        `json:"object"`
 }
@@ -53,11 +56,12 @@ type EventList struct {
 // EventListParams is the set of parameters that can be used when listing events.
 // For more details see https://stripe.com/docs/api#list_events.
 type EventListParams struct {
-	ListParams   `form:"*"`
-	Created      *int64            `form:"created"`
-	CreatedRange *RangeQueryParams `form:"created"`
-	Type         *string           `form:"type"`
-	Types        []*string         `form:"types"`
+	ListParams      `form:"*"`
+	Created         *int64            `form:"created"`
+	CreatedRange    *RangeQueryParams `form:"created"`
+	DeliverySuccess *bool             `form:"delivery_success"`
+	Type            *string           `form:"type"`
+	Types           []*string         `form:"types"`
 }
 
 // GetObjectValue returns the value from the e.Data.Object bag based on the keys hierarchy.

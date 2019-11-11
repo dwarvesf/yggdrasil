@@ -1,5 +1,10 @@
 package api
 
+import (
+	"net"
+	"strconv"
+)
+
 type Weights struct {
 	Passing int
 	Warning int
@@ -16,6 +21,11 @@ type Node struct {
 	ModifyIndex     uint64
 }
 
+type ServiceAddress struct {
+	Address string
+	Port    int
+}
+
 type CatalogService struct {
 	ID                       string
 	Node                     string
@@ -26,12 +36,15 @@ type CatalogService struct {
 	ServiceID                string
 	ServiceName              string
 	ServiceAddress           string
+	ServiceTaggedAddresses   map[string]ServiceAddress
 	ServiceTags              []string
 	ServiceMeta              map[string]string
 	ServicePort              int
 	ServiceWeights           Weights
 	ServiceEnableTagOverride bool
+	ServiceProxy             *AgentServiceConnectProxyConfig
 	CreateIndex              uint64
+	Checks                   HealthChecks
 	ModifyIndex              uint64
 }
 
@@ -49,6 +62,7 @@ type CatalogRegistration struct {
 	Datacenter      string
 	Service         *AgentService
 	Check           *AgentCheck
+	Checks          HealthChecks
 	SkipNodeUpdate  bool
 }
 
@@ -162,23 +176,43 @@ func (c *Catalog) Services(q *QueryOptions) (map[string][]string, *QueryMeta, er
 
 // Service is used to query catalog entries for a given service
 func (c *Catalog) Service(service, tag string, q *QueryOptions) ([]*CatalogService, *QueryMeta, error) {
-	return c.service(service, tag, q, false)
+	var tags []string
+	if tag != "" {
+		tags = []string{tag}
+	}
+	return c.service(service, tags, q, false)
+}
+
+// Supports multiple tags for filtering
+func (c *Catalog) ServiceMultipleTags(service string, tags []string, q *QueryOptions) ([]*CatalogService, *QueryMeta, error) {
+	return c.service(service, tags, q, false)
 }
 
 // Connect is used to query catalog entries for a given Connect-enabled service
 func (c *Catalog) Connect(service, tag string, q *QueryOptions) ([]*CatalogService, *QueryMeta, error) {
-	return c.service(service, tag, q, true)
+	var tags []string
+	if tag != "" {
+		tags = []string{tag}
+	}
+	return c.service(service, tags, q, true)
 }
 
-func (c *Catalog) service(service, tag string, q *QueryOptions, connect bool) ([]*CatalogService, *QueryMeta, error) {
+// Supports multiple tags for filtering
+func (c *Catalog) ConnectMultipleTags(service string, tags []string, q *QueryOptions) ([]*CatalogService, *QueryMeta, error) {
+	return c.service(service, tags, q, true)
+}
+
+func (c *Catalog) service(service string, tags []string, q *QueryOptions, connect bool) ([]*CatalogService, *QueryMeta, error) {
 	path := "/v1/catalog/service/" + service
 	if connect {
 		path = "/v1/catalog/connect/" + service
 	}
 	r := c.c.newRequest("GET", path)
 	r.setQueryOptions(q)
-	if tag != "" {
-		r.params.Set("tag", tag)
+	if len(tags) > 0 {
+		for _, tag := range tags {
+			r.params.Add("tag", tag)
+		}
 	}
 	rtt, resp, err := requireOK(c.c.doRequest(r))
 	if err != nil {
@@ -216,4 +250,13 @@ func (c *Catalog) Node(node string, q *QueryOptions) (*CatalogNode, *QueryMeta, 
 		return nil, nil, err
 	}
 	return out, qm, nil
+}
+
+func ParseServiceAddr(addrPort string) (ServiceAddress, error) {
+	port := 0
+	host, portStr, err := net.SplitHostPort(addrPort)
+	if err == nil {
+		port, err = strconv.Atoi(portStr)
+	}
+	return ServiceAddress{Address: host, Port: port}, err
 }

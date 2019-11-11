@@ -1,8 +1,26 @@
 language: go
 go:
-- '1.6'
+  - '1.6'
+  - '1.7'
+  - '1.8'
+  - '1.9'
+  - '1.10'
+  - '1.11'
+  - 'tip'
+
 before_script:
-- $HOME/gopath/src/github.com/sendgrid/sendgrid-go/prism.sh
+  - $HOME/gopath/src/github.com/sendgrid/sendgrid-go/prism.sh
+
+before_install:
+  - go get -t -v ./...
+
+script:
+  - ./go.coverage.sh
+  - go test -cover -v -race ./... | grep -v -E '/vendor|/examples|/docker'
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
 notifications:
   hipchat:
     rooms:

@@ -21,20 +21,17 @@
 // Package buffer provides a thin wrapper around a byte slice. Unlike the
 // standard library's bytes.Buffer, it supports a portion of the strconv
 // package's zero-allocation formatters.
-package buffer
+package buffer // import "go.uber.org/zap/buffer"
 
 import "strconv"
 
 const _size = 1024 // by default, create 1 KiB buffers
 
-// Buffer is a thin wrapper around a byte slice.
+// Buffer is a thin wrapper around a byte slice. It's intended to be pooled, so
+// the only way to construct one is via a Pool.
 type Buffer struct {
-	bs []byte
-}
-
-// New creates a new Buffer of the default size.
-func New() *Buffer {
-	return &Buffer{make([]byte, 0, _size)}
+	bs   []byte
+	pool Pool
 }
 
 // AppendByte writes a single byte to the Buffer.
@@ -99,4 +96,20 @@ func (b *Buffer) Reset() {
 func (b *Buffer) Write(bs []byte) (int, error) {
 	b.bs = append(b.bs, bs...)
 	return len(bs), nil
+}
+
+// TrimNewline trims any final "\n" byte from the end of the buffer.
+func (b *Buffer) TrimNewline() {
+	if i := len(b.bs) - 1; i >= 0 {
+		if b.bs[i] == '\n' {
+			b.bs = b.bs[:i]
+		}
+	}
+}
+
+// Free returns the Buffer to its Pool.
+//
+// Callers must not retain references to the Buffer after calling Free.
+func (b *Buffer) Free() {
+	b.pool.put(b)
 }

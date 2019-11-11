@@ -40,6 +40,18 @@ const (
 	IssuingAuthorizationStatusReversed IssuingAuthorizationStatus = "reversed"
 )
 
+// IssuingAuthorizationVerificationDataAuthentication is the list of possible values for the result
+// of an authentication on an issuing authorization.
+type IssuingAuthorizationVerificationDataAuthentication string
+
+// List of values that IssuingAuthorizationVerificationDataCheck can take.
+const (
+	IssuingAuthorizationVerificationDataAuthenticationExempt  IssuingAuthorizationVerificationDataAuthentication = "exempt"
+	IssuingAuthorizationVerificationDataAuthenticationFailure IssuingAuthorizationVerificationDataAuthentication = "failure"
+	IssuingAuthorizationVerificationDataAuthenticationNone    IssuingAuthorizationVerificationDataAuthentication = "none"
+	IssuingAuthorizationVerificationDataAuthenticationSuccess IssuingAuthorizationVerificationDataAuthentication = "success"
+)
+
 // IssuingAuthorizationVerificationDataCheck is the list of possible values for result of a check
 // for verification data on an issuing authorization.
 type IssuingAuthorizationVerificationDataCheck string
@@ -51,9 +63,20 @@ const (
 	IssuingAuthorizationVerificationDataCheckNotProvided IssuingAuthorizationVerificationDataCheck = "not_provided"
 )
 
+// IssuingAuthorizationWalletProviderType is the list of possible values for the authorization's wallet provider.
+type IssuingAuthorizationWalletProviderType string
+
+// List of values that IssuingAuthorizationWalletProviderType can take.
+const (
+	IssuingAuthorizationWalletProviderTypeApplePay   IssuingAuthorizationWalletProviderType = "apple_pay"
+	IssuingAuthorizationWalletProviderTypeGooglePay  IssuingAuthorizationWalletProviderType = "google_pay"
+	IssuingAuthorizationWalletProviderTypeSamsungPay IssuingAuthorizationWalletProviderType = "samsung_pay"
+)
+
 // IssuingAuthorizationParams is the set of parameters that can be used when updating an issuing authorization.
 type IssuingAuthorizationParams struct {
-	Params `form:"*"`
+	Params     `form:"*"`
+	HeldAmount *int64 `form:"held_amount"`
 }
 
 // IssuingAuthorizationListParams is the set of parameters that can be used when listing issuing authorizations.
@@ -88,9 +111,10 @@ type IssuingAuthorizationRequestHistory struct {
 
 // IssuingAuthorizationVerificationData is the resource representing verification data on an issuing authorization.
 type IssuingAuthorizationVerificationData struct {
-	AddressLine1Check IssuingAuthorizationVerificationDataCheck `json:"address_line1_check"`
-	AddressZipCheck   IssuingAuthorizationVerificationDataCheck `json:"address_zip_check"`
-	CVCCheck          IssuingAuthorizationVerificationDataCheck `json:"cvc_check"`
+	AddressLine1Check IssuingAuthorizationVerificationDataCheck          `json:"address_line1_check"`
+	AddressZipCheck   IssuingAuthorizationVerificationDataCheck          `json:"address_zip_check"`
+	Authentication    IssuingAuthorizationVerificationDataAuthentication `json:"authentication"`
+	CVCCheck          IssuingAuthorizationVerificationDataCheck          `json:"cvc_check"`
 }
 
 // IssuingAuthorization is the resource representing a Stripe issuing authorization.
@@ -117,6 +141,7 @@ type IssuingAuthorization struct {
 	Status                   IssuingAuthorizationStatus              `json:"status"`
 	Transactions             []*IssuingTransaction                   `json:"transactions"`
 	VerificationData         *IssuingAuthorizationVerificationData   `json:"verification_data"`
+	WalletProvider           IssuingAuthorizationWalletProviderType  `json:"wallet_provider"`
 }
 
 // IssuingMerchantData is the resource representing merchant data on Issuing APIs.
@@ -128,6 +153,7 @@ type IssuingMerchantData struct {
 	NetworkID  string `json:"network_id"`
 	PostalCode string `json:"postal_code"`
 	State      string `json:"state"`
+	URL        string `json:"url"`
 }
 
 // IssuingAuthorizationList is a list of issuing authorizations as retrieved from a list endpoint.

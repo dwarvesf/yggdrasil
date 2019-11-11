@@ -4,36 +4,53 @@
 [![Build Status](https://travis-ci.org/stripe/stripe-go.svg?branch=master)](https://travis-ci.org/stripe/stripe-go)
 [![Coverage Status](https://coveralls.io/repos/github/stripe/stripe-go/badge.svg?branch=master)](https://coveralls.io/github/stripe/stripe-go?branch=master)
 
-## Summary
-
 The official [Stripe][stripe] Go client library.
-
-## Versioning
-
-Each revision of the binding is tagged and the version is updated accordingly.
-
-Given Go's lack of built-in versioning, it is highly recommended you use a
-[package management tool][package-management] in order to ensure a newer
-version of the binding does not affect backwards compatibility.
-
-To see the list of past versions, run `git tag`. To manually get an older
-version of the client, clone this repo, checkout the specific tag and build the
-library:
-
-```sh
-git clone https://github.com/stripe/stripe-go.git
-cd stripe-go
-git checkout api_version_tag
-make build
-```
-
-For more details on changes between versions, see the [binding
-changelog](CHANGELOG.md) and [API changelog][api-changelog].
 
 ## Installation
 
+Install stripe-go with:
+
 ```sh
-go get github.com/stripe/stripe-go
+go get -u github.com/stripe/stripe-go
+```
+
+Then, import it using:
+
+``` go
+import (
+    "github.com/stripe/stripe-go"
+    "github.com/stripe/stripe-go/customer"
+)
+```
+
+### Go Module Support
+
+The library currently *does not* ship with first-class support for Go
+modules. We put in support for it before, but ran into compatibility problems
+for existing installations using Dep (see discussion in [closer to the bottom
+of this thread][gomodvsdep], and [reverted support][gomodrevert]. Our current
+plan is to wait for better module compatibility in Dep (see a [preliminary
+patch here][depgomodsupport]), give the release a little grace time to become
+more widely distributed, then bring support back.
+
+For now, require stripe-go in `go.mod` with a version but without a *version
+suffix* in the path like so:
+
+``` go
+module github.com/my/package
+
+require (
+    github.com/stripe/stripe-go v66.1.1
+)
+```
+
+And use the same style of import paths as above:
+
+``` go
+import (
+    "github.com/stripe/stripe-go"
+    "github.com/stripe/stripe-go/customer"
+)
 ```
 
 ## Documentation
@@ -50,11 +67,9 @@ Below are a few simple examples:
 
 ```go
 params := &stripe.CustomerParams{
-	Balance:     stripe.Int64(-123),
-	Description: stripe.String("Stripe Developer"),
-	Email:       stripe.String("gostripe@stripe.com"),
+	Description:        stripe.String("Stripe Developer"),
+	Email:              stripe.String("gostripe@stripe.com"),
 }
-params.SetSource("tok_1234")
 
 customer, err := customer.New(params)
 ```
@@ -253,6 +268,73 @@ if err := i.Err(); err != nil {
 }
 ```
 
+### Configuring Automatic Retries
+
+You can enable automatic retries on requests that fail due to a transient
+problem by configuring the maximum number of retries:
+
+```go
+import (
+	"github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/client"
+)
+
+config := &stripe.BackendConfig{
+    MaxNetworkRetries: 2,
+}
+
+sc := &client.API{}
+sc.Init("sk_key", &stripe.Backends{
+    API:     stripe.GetBackendWithConfig(stripe.APIBackend, config),
+    Uploads: stripe.GetBackendWithConfig(stripe.UploadsBackend, config),
+})
+
+coupon, err := sc.Coupons.New(...)
+```
+
+Various errors can trigger a retry, like a connection error or a timeout, and
+also certain API responses like HTTP status `409 Conflict`.
+
+[Idempotency keys][idempotency-keys] are added to requests to guarantee that
+retries are safe.
+
+### Configuring Logging
+
+Configure logging using the global `DefaultLeveledLogger` variable:
+
+```go
+stripe.DefaultLeveledLogger = &stripe.LeveledLogger{
+    Level: stripe.LevelInfo,
+}
+```
+
+Or on a per-backend basis:
+
+```go
+config := &stripe.BackendConfig{
+    LeveledLogger: &stripe.LeveledLogger{
+        Level: stripe.LevelInfo,
+    },
+}
+```
+
+It's possible to use non-Stripe leveled loggers as well. Stripe expects loggers
+to comply to the following interface:
+
+```go
+type LeveledLoggerInterface interface {
+	Debugf(format string, v ...interface{})
+	Errorf(format string, v ...interface{})
+	Infof(format string, v ...interface{})
+	Warnf(format string, v ...interface{})
+}
+```
+
+Some loggers like [Logrus][logrus] and Zap's [SugaredLogger][sugaredlogger]
+support this interface out-of-the-box so it's possible to set
+`DefaultLeveledLogger` to a `*logrus.Logger` or `*zap.SugaredLogger` directly.
+For others it may be necessary to write a thin shim layer to support them.
+
 ### Writing a Plugin
 
 If you're writing a plugin that uses the library, we'd appreciate it if you
@@ -269,6 +351,19 @@ stripe.SetAppInfo(&stripe.AppInfo{
 This information is passed along when the library makes calls to the Stripe
 API. Note that while `Name` is always required, `URL` and `Version` are
 optional.
+
+### Request latency telemetry
+
+By default, the library sends request latency telemetry to Stripe. These
+numbers help Stripe improve the overall latency of its API for all users.
+
+You can disable this behavior if you prefer:
+
+```go
+config := &stripe.BackendConfig{
+	EnableTelemetry: false,
+}
+```
 
 ## Development
 
@@ -298,7 +393,7 @@ instructions for installing via Homebrew and other methods):
 
 Run all tests:
 
-    go test ./...
+    make test
 
 Run tests for one package:
 
@@ -314,8 +409,14 @@ pull request][pulls].
 [api-docs]: https://stripe.com/docs/api/go
 [api-changelog]: https://stripe.com/docs/upgrades
 [connect]: https://stripe.com/docs/connect/authentication
+[depgomodsupport]: https://github.com/golang/dep/pull/1963
 [godoc]: http://godoc.org/github.com/stripe/stripe-go
+[gomodrevert]: https://github.com/stripe/stripe-go/pull/774
+[gomodvsdep]: https://github.com/stripe/stripe-go/pull/712
+[idempotency-keys]: https://stripe.com/docs/api/ruby#idempotent_requests
 [issues]: https://github.com/stripe/stripe-go/issues/new
+[logrus]: https://github.com/sirupsen/logrus/
+[modules]: https://github.com/golang/go/wiki/Modules
 [package-management]: https://code.google.com/p/go-wiki/wiki/PackageManagementTools
 [pulls]: https://github.com/stripe/stripe-go/pulls
 [stripe]: https://stripe.com
