@@ -6,7 +6,7 @@ import (
 
 // Request is a struct define request message taken from queue
 type Request struct {
-	Payload Payload               `json:"payload"`
+	Payload Payload               `json:"payload validate:"required"`
 	Retry   toolkit.RetryMetadata `json:"retry"`
 }
 
@@ -14,7 +14,7 @@ type Request struct {
 type Payload struct {
 	From       Person            `json:"from"`
 	To         Person            `json:"to"`
-	Provider   string            `json:"provider" validate:"nonzero"`
+	Provider   string            `json:"provider" validate:"required"`
 	TemplateID string            `json:"template_id"`
 	Data       map[string]string `json:"data"`
 	Content    string            `json:"content"`
@@ -23,8 +23,8 @@ type Payload struct {
 }
 
 type Person struct {
-	Name  string `validate:"nonzero"`
-	Email string `validate:"nonzero"`
+	Name  string `validate:"required"`
+	Email string `validate:"required"`
 }
 
 // MailgunSecret contain Mailgun secret

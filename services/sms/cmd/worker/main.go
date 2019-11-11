@@ -3,89 +3,124 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
+	"os/signal"
 
-	consul "github.com/hashicorp/consul/api"
-	validator "gopkg.in/validator.v2"
+	"github.com/hashicorp/vault/api"
+	"github.com/nats-io/stan.go"
+	"gopkg.in/go-playground/validator.v9"
 
 	"github.com/dwarvesf/yggdrasil/logger"
 	"github.com/dwarvesf/yggdrasil/services/sms/model"
 	sms "github.com/dwarvesf/yggdrasil/services/sms/service"
 	"github.com/dwarvesf/yggdrasil/services/sms/service/twilio"
 	"github.com/dwarvesf/yggdrasil/toolkit"
-	"github.com/dwarvesf/yggdrasil/toolkit/queue"
-	"github.com/dwarvesf/yggdrasil/toolkit/queue/kafka"
+	"github.com/dwarvesf/yggdrasil/toolkit/queue/nats"
 )
 
 func main() {
 	svcName := "sms"
 	logger := logger.NewLogger()
+	var err error
 
-	logger.Info("start %v worker", svcName)
-	consulClient, err := consul.NewClient(&consul.Config{
-		Address: fmt.Sprintf("consul-server:8500"),
-	})
+	logger.Info("Start %v worker", svcName)
+	vaultClient, err := toolkit.NewVaultClient()
 	if err != nil {
+		logger.Error("Cannot connect to Vault %s", err.Error())
 		panic(err)
 	}
 
-	if err := toolkit.RegisterService(consulClient, svcName, 0); err != nil {
-		logger.Error("cannot register to consul %s", err.Error())
-		panic(err)
+	clientID := os.Getenv("CLIENT_ID")
+	cluster := os.Getenv("NATS_CLUSTER")
+	if cluster == "" {
+		cluster, err = toolkit.GetVaultValueFromKey(vaultClient, "nats_cluster")
+		if err != nil {
+			logger.Error("Cannot url from Vault %s", err.Error())
+			panic(err)
+		}
+	}
+	url := os.Getenv("NATS_URL")
+	if url == "" {
+		url, err = toolkit.GetVaultValueFromKey(vaultClient, "nats_url")
+		if err != nil {
+			logger.Error("Cannot url from Vault %s", err.Error())
+			panic(err)
+		}
 	}
 
-	var q queue.Queue
-	q = kafka.New(consulClient)
-	r := q.NewReader(svcName)
-	w := q.NewWriter("scheduler")
+	q := nats.New(cluster, clientID, url)
+	r, err := q.NewReader(svcName)
+	if err != nil {
+		logger.Error("Cannot connect to nats-streaming %s", err.Error())
+		panic(err)
+	}
 	defer r.Close()
+
+	w, err := q.NewWriter()
+	if err != nil {
+		logger.Error("Cannot connect to nats-streaming %s", err.Error())
+		panic(err)
+	}
 	defer w.Close()
 
-	for {
-		b, err := r.Read()
-		if err != nil {
-			logger.Error("cannot read from kafka %s", err.Error())
-			continue
-		}
+	handleMsg := func(msg *stan.Msg) {
+		logger.Info("Received request %v", string(msg.Data))
 
-		logger.Info("received request %v", string(b))
 		var req model.Request
-		if err = json.Unmarshal(b, &req); err != nil {
-			logger.Info("cannot parse request %s", err.Error())
-			continue
-		}
-		if err := validator.Validate(req); err != nil {
-			logger.Error("validate error: %s", err)
-			continue
+		if err := json.Unmarshal(msg.Data, &req); err != nil {
+			logger.Info("Cannot parse request %s", err.Error())
 		}
 
-		logger.Info("send %v", svcName)
-		if err := send(req.Payload, consulClient); err != nil {
-			logger.Error("cannot send %v %s", svcName, err.Error())
+		validate := validator.New()
+		if err := validate.Struct(req); err != nil {
+			logger.Error("Validate error: %s", err)
+		}
 
-			logger.Info("create retry payload")
+		logger.Info("Sending message to %v", svcName)
+		if err := send(req.Payload, vaultClient); err != nil {
+			logger.Error("Cannot send %v %s", svcName, err.Error())
+
+			logger.Info("Create retry payload")
 			message, err := toolkit.CreateRetryMessage(svcName, req.Payload, req.Retry)
 			if err != nil {
-				logger.Error("cannot create retry payload %s", err.Error())
-				continue
+				logger.Error("Cannot create retry payload %s", err.Error())
 			}
-			w.Write(svcName, message)
+			w.Write("scheduler", message)
 		}
+
+		msg.Ack()
 	}
+
+	if err := r.Read(handleMsg); err != nil {
+		logger.Error("Cannot read from nats-streaming %s", err.Error())
+		panic(err)
+	}
+
+	// Wait for a SIGINT (perhaps triggered by user with CTRL-C)
+	// Run cleanup when signal is received
+	signalChan := make(chan os.Signal, 1)
+	cleanupDone := make(chan bool)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		for range signalChan {
+			logger.Info("Received an interrupt, closing connection...\n\n")
+			cleanupDone <- true
+		}
+	}()
+	<-cleanupDone
 }
 
-func send(p model.Payload, consulClient *consul.Client) error {
-	var err error
+func send(p model.Payload, vaultClient *api.Client) error {
 	var smsClient sms.SMS
 
 	switch p.Provider {
 	case "twilio":
+		var err error
 		v := os.Getenv("TWILIO")
 		if v == "" {
-			v, err = toolkit.GetConsulValueFromKey(consulClient, p.Provider)
+			v, err = toolkit.GetVaultValueFromKey(vaultClient, "twilio")
 			if err != nil {
-				return err
+				return errors.New("can't get TWILIO value from Vault")
 			}
 		}
 

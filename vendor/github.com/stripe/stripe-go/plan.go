@@ -1,6 +1,7 @@
 package stripe
 
 import (
+	"encoding/json"
 	"strconv"
 
 	"github.com/stripe/stripe-go/form"
@@ -70,6 +71,7 @@ type Plan struct {
 	Active          bool                `json:"active"`
 	AggregateUsage  string              `json:"aggregate_usage"`
 	Amount          int64               `json:"amount"`
+	AmountDecimal   float64             `json:"amount_decimal,string"`
 	BillingScheme   PlanBillingScheme   `json:"billing_scheme"`
 	Created         int64               `json:"created"`
 	Currency        Currency            `json:"currency"`
@@ -111,6 +113,7 @@ type PlanParams struct {
 	Active          *bool                     `form:"active"`
 	AggregateUsage  *string                   `form:"aggregate_usage"`
 	Amount          *int64                    `form:"amount"`
+	AmountDecimal   *float64                  `form:"amount_decimal,high_precision"`
 	BillingScheme   *string                   `form:"billing_scheme"`
 	Currency        *string                   `form:"currency"`
 	ID              *string                   `form:"id"`
@@ -128,8 +131,11 @@ type PlanParams struct {
 
 // PlanTier configures tiered pricing
 type PlanTier struct {
-	UnitAmount int64 `json:"unit_amount"`
-	UpTo       int64 `json:"up_to"`
+	FlatAmount        int64   `json:"flat_amount"`
+	FlatAmountDecimal float64 `json:"flat_amount_decimal,string"`
+	UnitAmount        int64   `json:"unit_amount"`
+	UnitAmountDecimal float64 `json:"unit_amount_decimal,string"`
+	UpTo              int64   `json:"up_to"`
 }
 
 // PlanTransformUsage represents the bucket billing configuration.
@@ -146,10 +152,13 @@ type PlanTransformUsageParams struct {
 
 // PlanTierParams configures tiered pricing
 type PlanTierParams struct {
-	Params     `form:"*"`
-	UnitAmount *int64 `form:"unit_amount"`
-	UpTo       *int64 `form:"-"` // handled in custom AppendTo
-	UpToInf    *bool  `form:"-"` // handled in custom AppendTo
+	Params            `form:"*"`
+	FlatAmount        *int64   `form:"flat_amount"`
+	FlatAmountDecimal *float64 `form:"flat_amount_decimal,high_precision"`
+	UnitAmount        *int64   `form:"unit_amount"`
+	UnitAmountDecimal *float64 `form:"unit_amount_decimal,high_precision"`
+	UpTo              *int64   `form:"-"` // handled in custom AppendTo
+	UpToInf           *bool    `form:"-"` // handled in custom AppendTo
 }
 
 // AppendTo implements custom up_to serialisation logic for tiers configuration
@@ -165,8 +174,29 @@ func (p *PlanTierParams) AppendTo(body *form.Values, keyParts []string) {
 // This can only be used on plan creation and won't work on plan update.
 // For more details see https://stripe.com/docs/api#create_plan-product and https://stripe.com/docs/api#update_plan-product
 type PlanProductParams struct {
+	Active              *bool             `form:"active"`
 	ID                  *string           `form:"id"`
 	Name                *string           `form:"name"`
 	Metadata            map[string]string `form:"metadata"`
 	StatementDescriptor *string           `form:"statement_descriptor"`
+	UnitLabel           *string           `form:"unit_label"`
+}
+
+// UnmarshalJSON handles deserialization of a Plan.
+// This custom unmarshaling is needed because the resulting
+// property may be an id or the full struct if it was expanded.
+func (s *Plan) UnmarshalJSON(data []byte) error {
+	if id, ok := ParseID(data); ok {
+		s.ID = id
+		return nil
+	}
+
+	type plan Plan
+	var v plan
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	*s = Plan(v)
+	return nil
 }

@@ -91,12 +91,6 @@ type OrderUpdateShippingParams struct {
 	TrackingNumber *string `form:"tracking_number"`
 }
 
-// OrderReturnParams is the set of parameters that can be used when returning orders.
-type OrderReturnParams struct {
-	Params `form:"*"`
-	Items  []*OrderItemParams `form:"items"`
-}
-
 // Shipping describes the shipping hash on an order.
 type Shipping struct {
 	Address        *Address `json:"address"`
@@ -149,6 +143,7 @@ type Order struct {
 	Status                 string            `json:"status"`
 	StatusTransitions      StatusTransitions `json:"status_transitions"`
 	Updated                int64             `json:"updated"`
+	UpstreamID             string            `json:"upstream_id"`
 }
 
 // OrderList is a list of orders as retrieved from a list endpoint.
@@ -166,6 +161,7 @@ type OrderListParams struct {
 	IDs               []*string                      `form:"ids"`
 	Status            *string                        `form:"status"`
 	StatusTransitions *StatusTransitionsFilterParams `form:"status_transitions"`
+	UpstreamIDs       []*string                      `form:"upstream_ids"`
 }
 
 // StatusTransitionsFilterParams are parameters that can used to filter on status_transition when listing orders.
@@ -183,7 +179,7 @@ type StatusTransitionsFilterParams struct {
 // StatusTransitions are the timestamps at which the order status was updated.
 type StatusTransitions struct {
 	Canceled  int64 `json:"canceled"`
-	Fulfilled int64 `json:"fulfiled"`
+	Fulfilled int64 `json:"fulfilled"`
 	Paid      int64 `json:"paid"`
 	Returned  int64 `json:"returned"`
 }

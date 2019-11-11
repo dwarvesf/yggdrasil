@@ -85,6 +85,7 @@ type PayoutParams struct {
 	Params              `form:"*"`
 	Amount              *int64  `form:"amount"`
 	Currency            *string `form:"currency"`
+	Description         *string `form:"description"`
 	Destination         *string `form:"destination"`
 	Method              *string `form:"method"`
 	SourceType          *string `form:"source_type"`
@@ -114,6 +115,7 @@ type Payout struct {
 	Card                      *Card               `json:"card"`
 	Created                   int64               `json:"created"`
 	Currency                  Currency            `json:"currency"`
+	Description               *string             `json:"description"`
 	Destination               *PayoutDestination  `json:"destination"`
 	FailureBalanceTransaction *BalanceTransaction `json:"failure_balance_transaction"`
 	FailureCode               PayoutFailureCode   `json:"failure_code"`
@@ -179,12 +181,4 @@ func (d *PayoutDestination) UnmarshalJSON(data []byte) error {
 	}
 
 	return err
-}
-
-// MarshalJSON handles serialization of a PayoutDestination.
-// This custom marshaling is needed because we can only send a string
-// ID as a destination, even though it can be expanded to a full
-// object when retrieving
-func (d *PayoutDestination) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.ID)
 }

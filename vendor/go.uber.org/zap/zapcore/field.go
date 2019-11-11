@@ -21,8 +21,10 @@
 package zapcore
 
 import (
+	"bytes"
 	"fmt"
 	"math"
+	"reflect"
 	"time"
 )
 
@@ -41,6 +43,8 @@ const (
 	BinaryType
 	// BoolType indicates that the field carries a bool.
 	BoolType
+	// ByteStringType indicates that the field carries UTF-8 encoded bytes.
+	ByteStringType
 	// Complex128Type indicates that the field carries a complex128.
 	Complex128Type
 	// Complex64Type indicates that the field carries a complex128.
@@ -112,6 +116,8 @@ func (f Field) AddTo(enc ObjectEncoder) {
 		enc.AddBinary(f.Key, f.Interface.([]byte))
 	case BoolType:
 		enc.AddBool(f.Key, f.Integer == 1)
+	case ByteStringType:
+		enc.AddByteString(f.Key, f.Interface.([]byte))
 	case Complex128Type:
 		enc.AddComplex128(f.Key, f.Interface.(complex128))
 	case Complex64Type:
@@ -133,7 +139,12 @@ func (f Field) AddTo(enc ObjectEncoder) {
 	case StringType:
 		enc.AddString(f.Key, f.String)
 	case TimeType:
-		enc.AddTime(f.Key, time.Unix(0, f.Integer))
+		if f.Interface != nil {
+			enc.AddTime(f.Key, time.Unix(0, f.Integer).In(f.Interface.(*time.Location)))
+		} else {
+			// Fall back to UTC if location is nil.
+			enc.AddTime(f.Key, time.Unix(0, f.Integer))
+		}
 	case Uint64Type:
 		enc.AddUint64(f.Key, uint64(f.Integer))
 	case Uint32Type:
@@ -149,9 +160,9 @@ func (f Field) AddTo(enc ObjectEncoder) {
 	case NamespaceType:
 		enc.OpenNamespace(f.Key)
 	case StringerType:
-		enc.AddString(f.Key, f.Interface.(fmt.Stringer).String())
+		err = encodeStringer(f.Key, f.Interface, enc)
 	case ErrorType:
-		enc.AddString(f.Key, f.Interface.(error).Error())
+		encodeError(f.Key, f.Interface.(error), enc)
 	case SkipType:
 		break
 	default:
@@ -163,8 +174,39 @@ func (f Field) AddTo(enc ObjectEncoder) {
 	}
 }
 
+// Equals returns whether two fields are equal. For non-primitive types such as
+// errors, marshalers, or reflect types, it uses reflect.DeepEqual.
+func (f Field) Equals(other Field) bool {
+	if f.Type != other.Type {
+		return false
+	}
+	if f.Key != other.Key {
+		return false
+	}
+
+	switch f.Type {
+	case BinaryType, ByteStringType:
+		return bytes.Equal(f.Interface.([]byte), other.Interface.([]byte))
+	case ArrayMarshalerType, ObjectMarshalerType, ErrorType, ReflectType:
+		return reflect.DeepEqual(f.Interface, other.Interface)
+	default:
+		return f == other
+	}
+}
+
 func addFields(enc ObjectEncoder, fields []Field) {
 	for i := range fields {
 		fields[i].AddTo(enc)
 	}
+}
+
+func encodeStringer(key string, stringer interface{}, enc ObjectEncoder) (err error) {
+	defer func() {
+		if v := recover(); v != nil {
+			err = fmt.Errorf("PANIC=%v", v)
+		}
+	}()
+
+	enc.AddString(key, stringer.(fmt.Stringer).String())
+	return
 }

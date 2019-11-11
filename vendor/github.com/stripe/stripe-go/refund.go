@@ -2,6 +2,16 @@ package stripe
 
 import "encoding/json"
 
+// RefundFailureReason is, if set, the reason the refund failed.
+type RefundFailureReason string
+
+// List of values that RefundFailureReason can take.
+const (
+	RefundFailureReasonExpiredOrCanceledCard RefundFailureReason = "expired_or_canceled_card"
+	RefundFailureReasonLostOrStolenCard      RefundFailureReason = "lost_or_stolen_card"
+	RefundFailureReasonUnknown               RefundFailureReason = "unknown"
+)
+
 // RefundReason is, if set, the reason the refund is being made
 type RefundReason string
 
@@ -37,22 +47,30 @@ type RefundParams struct {
 // RefundListParams is the set of parameters that can be used when listing refunds.
 // For more details see https://stripe.com/docs/api#list_refunds.
 type RefundListParams struct {
-	ListParams `form:"*"`
+	ListParams   `form:"*"`
+	Charge       *string           `form:"charge"`
+	Created      *int64            `form:"created"`
+	CreatedRange *RangeQueryParams `form:"created"`
 }
 
 // Refund is the resource representing a Stripe refund.
 // For more details see https://stripe.com/docs/api#refunds.
 type Refund struct {
-	Amount             int64               `json:"amount"`
-	BalanceTransaction *BalanceTransaction `json:"balance_transaction"`
-	Charge             *Charge             `json:"charge"`
-	Created            int64               `json:"created"`
-	Currency           Currency            `json:"currency"`
-	ID                 string              `json:"id"`
-	Metadata           map[string]string   `json:"metadata"`
-	Reason             RefundReason        `json:"reason"`
-	ReceiptNumber      string              `json:"receipt_number"`
-	Status             RefundStatus        `json:"status"`
+	Amount                    int64               `json:"amount"`
+	BalanceTransaction        *BalanceTransaction `json:"balance_transaction"`
+	Charge                    *Charge             `json:"charge"`
+	Created                   int64               `json:"created"`
+	Currency                  Currency            `json:"currency"`
+	FailureReason             RefundFailureReason `json:"failure_reason"`
+	FailureBalanceTransaction *BalanceTransaction `json:"failure_balance_transaction"`
+	ID                        string              `json:"id"`
+	Metadata                  map[string]string   `json:"metadata"`
+	Object                    string              `json:"object"`
+	Reason                    RefundReason        `json:"reason"`
+	ReceiptNumber             string              `json:"receipt_number"`
+	SourceTransferReversal    *Reversal           `json:"source_transfer_reversal"`
+	Status                    RefundStatus        `json:"status"`
+	TransferReversal          *Reversal           `json:"transfer_reversal"`
 }
 
 // RefundList is a list object for refunds.

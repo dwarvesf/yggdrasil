@@ -12,16 +12,16 @@ import (
 // CreatedAt provides the time at which Mailgun detected the bounce.
 type Bounce struct {
 	CreatedAt string      `json:"created_at"`
-	code      interface{} `json:"code"`
+	Code      interface{} `json:"code"`
 	Address   string      `json:"address"`
 	Error     string      `json:"error"`
 }
 
 type Paging struct {
-	First    string `json:"first"`
-	Next     string `json:"next"`
-	Previous string `json:"previous"`
-	Last     string `json:"last"`
+	First    string `json:"first,omitempty"`
+	Next     string `json:"next,omitempty"`
+	Previous string `json:"previous,omitempty"`
+	Last     string `json:"last,omitempty"`
 }
 
 type bounceEnvelope struct {
@@ -39,7 +39,7 @@ func (i Bounce) GetCreatedAt() (t time.Time, err error) {
 // returned as a string or as an integer.  This method overcomes a protocol
 // bug in the Mailgun API.
 func (b Bounce) GetCode() (int, error) {
-	switch c := b.code.(type) {
+	switch c := b.Code.(type) {
 	case int:
 		return c, nil
 	case string:
@@ -63,7 +63,7 @@ func (m *MailgunImpl) GetBounces(limit, skip int) (int, []Bounce, error) {
 	}
 
 	r.setClient(m.Client())
-	r.setBasicAuth(basicAuthUser, m.ApiKey())
+	r.setBasicAuth(basicAuthUser, m.APIKey())
 
 	var response bounceEnvelope
 	err := getResponseFromJSON(r, &response)
@@ -78,7 +78,7 @@ func (m *MailgunImpl) GetBounces(limit, skip int) (int, []Bounce, error) {
 func (m *MailgunImpl) GetSingleBounce(address string) (Bounce, error) {
 	r := newHTTPRequest(generateApiUrl(m, bouncesEndpoint) + "/" + address)
 	r.setClient(m.Client())
-	r.setBasicAuth(basicAuthUser, m.ApiKey())
+	r.setBasicAuth(basicAuthUser, m.APIKey())
 
 	var response Bounce
 	err := getResponseFromJSON(r, &response)
@@ -104,7 +104,7 @@ func (m *MailgunImpl) GetSingleBounce(address string) (Bounce, error) {
 func (m *MailgunImpl) AddBounce(address, code, error string) error {
 	r := newHTTPRequest(generateApiUrl(m, bouncesEndpoint))
 	r.setClient(m.Client())
-	r.setBasicAuth(basicAuthUser, m.ApiKey())
+	r.setBasicAuth(basicAuthUser, m.APIKey())
 
 	payload := newUrlEncodedPayload()
 	payload.addValue("address", address)
@@ -122,7 +122,7 @@ func (m *MailgunImpl) AddBounce(address, code, error string) error {
 func (m *MailgunImpl) DeleteBounce(address string) error {
 	r := newHTTPRequest(generateApiUrl(m, bouncesEndpoint) + "/" + address)
 	r.setClient(m.Client())
-	r.setBasicAuth(basicAuthUser, m.ApiKey())
+	r.setBasicAuth(basicAuthUser, m.APIKey())
 	_, err := makeDeleteRequest(r)
 	return err
 }

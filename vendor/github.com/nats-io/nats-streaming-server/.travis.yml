@@ -1,0 +1,43 @@
+language: go
+sudo: false
+go:
+- 1.11.x
+- 1.12.x
+addons:
+  apt:
+    packages:
+    - rpm
+env:
+- GO111MODULE=off
+go_import_path: github.com/nats-io/nats-streaming-server
+install:
+- go get -t ./...
+- go get github.com/nats-io/nats-server
+- go get -u honnef.co/go/tools/cmd/staticcheck
+- go get -u github.com/client9/misspell/cmd/misspell
+- go get -u github.com/go-sql-driver/mysql
+services:
+- mysql
+before_script:
+# Remove the "spb" directory that contains protobuf
+- GO_LIST=$(go list ./... | grep -v "/spb")
+- go install
+- $(exit $(go fmt $GO_LIST | wc -l))
+- go vet $GO_LIST
+- find . -type f -name "*.go" | grep -v "/vendor/" | grep -v "/spb/" | xargs misspell -error -locale US
+- staticcheck $GO_LIST
+script:
+- set -e
+- mysql -u root -e "CREATE USER 'nss'@'localhost' IDENTIFIED BY 'password'; GRANT ALL PRIVILEGES ON *.* TO 'nss'@'localhost'; CREATE DATABASE test_nats_streaming;"
+- go test -i ./...
+- if [[ "$TRAVIS_GO_VERSION" =~ 1.12 ]]; then ./scripts/cov.sh TRAVIS; else go test -failfast ./...; fi
+- set +e
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: curl -sL http://git.io/goreleaser | bash
+  verbose: true
+  on:
+    tags: true
+    condition: $TRAVIS_GO_VERSION =~ 1.11

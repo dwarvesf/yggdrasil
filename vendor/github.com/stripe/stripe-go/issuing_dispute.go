@@ -44,33 +44,34 @@ type IssuingDisputeEvidenceParams struct {
 
 // IssuingDisputeParams is the set of parameters that can be used when creating or updating an issuing dispute.
 type IssuingDisputeParams struct {
-	Params      `form:"*"`
-	Amount      *int64                        `form:"amount"`
-	Evidence    *IssuingDisputeEvidenceParams `form:"evidence"`
-	Reason      *string                       `form:"reason"`
-	Transaction *string                       `form:"transaction"`
+	Params              `form:"*"`
+	Amount              *int64                        `form:"amount"`
+	Evidence            *IssuingDisputeEvidenceParams `form:"evidence"`
+	Reason              *string                       `form:"reason"`
+	DisputedTransaction *string                       `form:"disputed_transaction"`
 }
 
 // IssuingDisputeListParams is the set of parameters that can be used when listing issuing dispute.
 type IssuingDisputeListParams struct {
-	ListParams   `form:"*"`
-	Created      *int64            `form:"created"`
-	CreatedRange *RangeQueryParams `form:"created"`
-	Transaction  *string           `form:"transaction"`
+	ListParams          `form:"*"`
+	Created             *int64            `form:"created"`
+	CreatedRange        *RangeQueryParams `form:"created"`
+	DisputedTransaction *string           `form:"disputed_transaction"`
+	Transaction         *string           `form:"transaction"`
 }
 
 // IssuingDisputeEvidenceFraudulent is the resource representing the evidence hash on an issuing dispute
 // with the reason set as fraudulent.
 type IssuingDisputeEvidenceFraudulent struct {
-	DisputeExplanation string      `json:"dispute_explanation"`
-	UncategorizedFile  *FileUpload `json:"uncategorized_file"`
+	DisputeExplanation string `json:"dispute_explanation"`
+	UncategorizedFile  *File  `json:"uncategorized_file"`
 }
 
 // IssuingDisputeEvidenceOther is the resource representing the evidence hash on an issuing dispute
 // with the reason set as other.
 type IssuingDisputeEvidenceOther struct {
-	DisputeExplanation string      `json:"dispute_explanation"`
-	UncategorizedFile  *FileUpload `json:"uncategorized_file"`
+	DisputeExplanation string `json:"dispute_explanation"`
+	UncategorizedFile  *File  `json:"uncategorized_file"`
 }
 
 // IssuingDisputeEvidence is the resource representing evidence on an issuing dispute.

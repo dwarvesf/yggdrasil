@@ -1,21 +1,27 @@
 package queue
 
-import "io"
+import (
+	"io"
+
+	"github.com/nats-io/stan.go"
+)
 
 // Writer implement methods related to sending msg to queue
 type Writer interface {
-	Write(key string, value []byte) error
+	Write(channel string, msg []byte) error
 	io.Closer
 }
 
 // Reader implement methods related to reading msg from queue
 type Reader interface {
-	Read() ([]byte, error)
+	Read(handleMsg func(msg *stan.Msg)) error
 	io.Closer
 }
 
 // Queue represent message queue functions
 type Queue interface {
-	NewWriter(topic string) Writer
-	NewReader(topic string) Reader
+	// NewWriter return a new writer for Queue
+	NewWriter() (Writer, error)
+	// NewWriter return a new reader for Queue
+	NewReader(topic string) (Reader, error)
 }

@@ -23,8 +23,9 @@ package zap
 import (
 	"fmt"
 
-	"go.uber.org/zap/internal/multierror"
 	"go.uber.org/zap/zapcore"
+
+	"go.uber.org/multierr"
 )
 
 const (
@@ -35,11 +36,20 @@ const (
 // A SugaredLogger wraps the base Logger functionality in a slower, but less
 // verbose, API. Any Logger can be converted to a SugaredLogger with its Sugar
 // method.
+//
+// Unlike the Logger, the SugaredLogger doesn't insist on structured logging.
+// For each log level, it exposes three methods: one for loosely-typed
+// structured logging, one for println-style formatting, and one for
+// printf-style formatting. For example, SugaredLoggers can produce InfoLevel
+// output with Infow ("info with" structured context), Info, or Infof.
 type SugaredLogger struct {
 	base *Logger
 }
 
-// Desugar unwraps a SugaredLogger, exposing the original Logger.
+// Desugar unwraps a SugaredLogger, exposing the original Logger. Desugaring
+// is quite inexpensive, so it's reasonable for a single application to use
+// both Loggers and SugaredLoggers, converting between them on the boundaries
+// of performance-sensitive code.
 func (s *SugaredLogger) Desugar() *Logger {
 	base := s.base.clone()
 	base.callerSkip -= 2
@@ -52,9 +62,9 @@ func (s *SugaredLogger) Named(name string) *SugaredLogger {
 }
 
 // With adds a variadic number of fields to the logging context. It accepts a
-// mix of strongly-typed zapcore.Field objects and loosely-typed key-value
-// pairs. When processing pairs, the first element of the pair is used as the
-// field key and the second as the field value.
+// mix of strongly-typed Field objects and loosely-typed key-value pairs. When
+// processing pairs, the first element of the pair is used as the field key
+// and the second as the field value.
 //
 // For example,
 //   sugaredLogger.With(
@@ -65,7 +75,7 @@ func (s *SugaredLogger) Named(name string) *SugaredLogger {
 //     "user", User{Name: "alice"},
 //  )
 // is the equivalent of
-//   baseLogger.With(
+//   unsugared.With(
 //     String("hello", "world"),
 //     String("failure", "oh no"),
 //     Stack(),
@@ -75,8 +85,8 @@ func (s *SugaredLogger) Named(name string) *SugaredLogger {
 //
 // Note that the keys in key-value pairs should be strings. In development,
 // passing a non-string key panics. In production, the logger is more
-// forgiving: a separate error is logged, but the key-value pair is skipped and
-// execution continues. Passing an orphaned key triggers similar behavior:
+// forgiving: a separate error is logged, but the key-value pair is skipped
+// and execution continues. Passing an orphaned key triggers similar behavior:
 // panics in development and errors in production.
 func (s *SugaredLogger) With(args ...interface{}) *SugaredLogger {
 	return &SugaredLogger{base: s.base.With(s.sweetenFields(args)...)}
@@ -200,6 +210,11 @@ func (s *SugaredLogger) Fatalw(msg string, keysAndValues ...interface{}) {
 	s.log(FatalLevel, msg, nil, keysAndValues)
 }
 
+// Sync flushes any buffered log entries.
+func (s *SugaredLogger) Sync() error {
+	return s.base.Sync()
+}
+
 func (s *SugaredLogger) log(lvl zapcore.Level, template string, fmtArgs []interface{}, context []interface{}) {
 	// If logging at this level is completely disabled, skip the overhead of
 	// string formatting.
@@ -220,19 +235,19 @@ func (s *SugaredLogger) log(lvl zapcore.Level, template string, fmtArgs []interf
 	}
 }
 
-func (s *SugaredLogger) sweetenFields(args []interface{}) []zapcore.Field {
+func (s *SugaredLogger) sweetenFields(args []interface{}) []Field {
 	if len(args) == 0 {
 		return nil
 	}
 
 	// Allocate enough space for the worst case; if users pass only structured
 	// fields, we shouldn't penalize them with extra allocations.
-	fields := make([]zapcore.Field, 0, len(args))
+	fields := make([]Field, 0, len(args))
 	var invalid invalidPairs
 
 	for i := 0; i < len(args); {
 		// This is a strongly-typed field. Consume it and move on.
-		if f, ok := args[i].(zapcore.Field); ok {
+		if f, ok := args[i].(Field); ok {
 			fields = append(fields, f)
 			i++
 			continue
@@ -281,9 +296,9 @@ func (p invalidPair) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 type invalidPairs []invalidPair
 
 func (ps invalidPairs) MarshalLogArray(enc zapcore.ArrayEncoder) error {
-	var errs multierror.Error
+	var err error
 	for i := range ps {
-		errs = errs.Append(enc.AppendObject(ps[i]))
+		err = multierr.Append(err, enc.AppendObject(ps[i]))
 	}
-	return errs.AsError()
+	return err
 }
